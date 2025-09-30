@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { ShoppingCart, Plus, Search, Coffee, UtensilsCrossed, IceCream, MapPin, Croissant, Sandwich, Salad, Cake, Wine, Droplets } from "lucide-react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+<<<<<<< HEAD
 import { Input } from "@/components/ui/input"
 
 interface MenuItem {
@@ -20,6 +21,9 @@ interface MenuItem {
 interface CartItem extends MenuItem {
   qty: number
 }
+=======
+import { useRouter } from "next/navigation"
+>>>>>>> b4cc98f8dfc3575ad64333a1233a972fda6ea7fc
 
 const menuData: MenuItem[] = [
   { id: 1, name: "Espresso", description: "Kopi hitam pekat dengan rasa yang kuat", price: 18000, category: "Kopi", icon: Coffee },
@@ -44,11 +48,17 @@ const categories = [
   { name: "Minuman", icon: Coffee },
 ]
 
+<<<<<<< HEAD
 export default function SmartCafeMenu() {
   const [cart, setCart] = useState<CartItem[]>([])
   const [selectedCategory, setSelectedCategory] = useState("Semua")
   const [searchQuery, setSearchQuery] = useState("")
   const [orderType, setOrderType] = useState<"Dine In" | "Takeaway" | "Delivery">("Dine In")
+=======
+export default function MenuPage() {
+  const { items, addItem, removeItem, clearCart } = useCartStore()
+  const router = useRouter()
+>>>>>>> b4cc98f8dfc3575ad64333a1233a972fda6ea7fc
 
   const addToCart = (item: MenuItem) => {
     setCart(prev => {
@@ -80,7 +90,13 @@ export default function SmartCafeMenu() {
   const total = cart.reduce((acc, i) => acc + i.price * i.qty, 0)
   const totalItems = cart.reduce((acc, i) => acc + i.qty, 0)
 
+  const handleCheckout = () => {
+    // langsung redirect, cart tetap ada di zustand
+    router.push("/pembayaran")
+  }
+
   return (
+<<<<<<< HEAD
     <div className="min-h-screen bg-green-50">
       {/* Header */}
       <header className="bg-green-400 text-white p-6">
@@ -92,6 +108,61 @@ export default function SmartCafeMenu() {
                 <h1 className="text-3xl font-bold">Smart Cafe</h1>
               </div>
               <p className="text-sm opacity-90">Meja: A7</p>
+=======
+    <main className="max-w-3xl mx-auto p-6">
+      <header className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Menu Cafe</h1>
+
+        {/* Cart Drawer */}
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="outline" className="flex gap-2">
+              <ShoppingCart className="w-5 h-5" />
+              {items.length > 0 && (
+                <span className="text-sm bg-red-500 text-white px-2 rounded-full">
+                  {items.reduce((acc, i) => acc + i.qty, 0)}
+                </span>
+              )}
+            </Button>
+          </SheetTrigger>
+          <SheetContent>
+            <SheetHeader>
+              <SheetTitle>Keranjang</SheetTitle>
+            </SheetHeader>
+            <div className="mt-4 space-y-4">
+              {items.length === 0 && <p className="text-gray-500">Keranjang kosong</p>}
+              {items.map((i) => (
+                <div key={i.id} className="flex justify-between items-center border-b pb-2">
+                  <div>
+                    <p className="font-medium">{i.name}</p>
+                    <p className="text-sm text-gray-500">
+                      Rp {i.price.toLocaleString()} x {i.qty}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button size="icon" variant="outline" onClick={() => removeItem(i.id)}>
+                      <Minus className="w-4 h-4" />
+                    </Button>
+                    <Button size="icon" variant="outline" onClick={() => addItem(i)}>
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              {items.length > 0 && (
+                <div className="pt-4 border-t">
+                  <p className="font-bold">Total: Rp {total.toLocaleString()}</p>
+                  <div className="flex gap-2 mt-2">
+                    <Button className="w-full" onClick={handleCheckout}>
+                      Checkout
+                    </Button>
+                    <Button className="w-full" variant="destructive" onClick={clearCart}>
+                      Hapus Semua
+                    </Button>
+                  </div>
+                </div>
+              )}
+>>>>>>> b4cc98f8dfc3575ad64333a1233a972fda6ea7fc
             </div>
             
             <Sheet>

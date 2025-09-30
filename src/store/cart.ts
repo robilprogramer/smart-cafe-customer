@@ -15,6 +15,7 @@ type CartState = {
   addItem: (item: MenuItem) => void
   removeItem: (id: number) => void
   clearCart: () => void
+  setItems: (items: CartItem[]) => void   // ✅ tambahan
 }
 
 export const useCartStore = create<CartState>((set) => ({
@@ -45,4 +46,5 @@ export const useCartStore = create<CartState>((set) => ({
       }
     }),
   clearCart: () => set({ items: [] }),
+  setItems: (items) => set({ items }),   // ✅ tambahan untuk load dari localStorage
 }))
