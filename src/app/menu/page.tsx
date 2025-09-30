@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { ShoppingCart, Plus, Minus } from "lucide-react"
 import { useCartStore, MenuItem } from "@/store/cart"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import { useRouter } from "next/navigation"
 
 const menuData: MenuItem[] = [
   { id: 1, name: "Nasi Goreng", description: "Nasi goreng spesial dengan telur dan ayam.", price: 25000, category: "Makanan" },
@@ -20,8 +21,14 @@ const categories = ["Makanan", "Minuman", "Lainnya"] as const
 
 export default function MenuPage() {
   const { items, addItem, removeItem, clearCart } = useCartStore()
+  const router = useRouter()
 
   const total = items.reduce((acc, i) => acc + i.price * i.qty, 0)
+
+  const handleCheckout = () => {
+    // langsung redirect, cart tetap ada di zustand
+    router.push("/pembayaran")
+  }
 
   return (
     <main className="max-w-3xl mx-auto p-6">
@@ -50,7 +57,9 @@ export default function MenuPage() {
                 <div key={i.id} className="flex justify-between items-center border-b pb-2">
                   <div>
                     <p className="font-medium">{i.name}</p>
-                    <p className="text-sm text-gray-500">Rp {i.price.toLocaleString()} x {i.qty}</p>
+                    <p className="text-sm text-gray-500">
+                      Rp {i.price.toLocaleString()} x {i.qty}
+                    </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <Button size="icon" variant="outline" onClick={() => removeItem(i.id)}>
@@ -66,7 +75,9 @@ export default function MenuPage() {
                 <div className="pt-4 border-t">
                   <p className="font-bold">Total: Rp {total.toLocaleString()}</p>
                   <div className="flex gap-2 mt-2">
-                    <Button className="w-full">Checkout</Button>
+                    <Button className="w-full" onClick={handleCheckout}>
+                      Checkout
+                    </Button>
                     <Button className="w-full" variant="destructive" onClick={clearCart}>
                       Hapus Semua
                     </Button>
