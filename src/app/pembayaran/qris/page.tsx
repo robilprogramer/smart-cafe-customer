@@ -14,6 +14,7 @@ export default function QrisPage() {
   // Hardcoded data
   const CUSTOMER_ID = "CUST-12345"
   const CUSTOMER_NAME = "John Doe"
+  const CUSTOMER_PHONE = "0812-3456-7890"
   const TABLE_ID = "MEJA-08"
   const ORDER_ID = "ORD-12345"
   const TIMESTAMP = "2025-09-30T10:00:00.000Z"
@@ -68,6 +69,7 @@ export default function QrisPage() {
   const qrData = {
     customerId: CUSTOMER_ID,
     customerName: CUSTOMER_NAME,
+    customerPhone: CUSTOMER_PHONE,
     tableId: TABLE_ID,
     orderId: ORDER_ID,
     items: items.map(i => ({
@@ -81,10 +83,8 @@ export default function QrisPage() {
   }
 
   const handleBayar = () => {
-    // ambil history lama
     const currentHistory = JSON.parse(localStorage.getItem("history") || "[]")
 
-    // tambah pesanan baru
     const newHistory = [
       ...currentHistory,
       ...items.map((i) => ({
@@ -95,17 +95,13 @@ export default function QrisPage() {
         date: new Date().toLocaleString(),
         metode: "QRIS",
         customerId: CUSTOMER_ID,
+        customerPhone: CUSTOMER_PHONE,
         tableId: TABLE_ID,
       })),
     ]
 
-    // simpan ke localStorage
     localStorage.setItem("history", JSON.stringify(newHistory))
-
-    // bersihkan cart
     clearCart()
-
-    // redirect ke success
     router.push("/pembayaran/success")
   }
 
@@ -159,18 +155,22 @@ export default function QrisPage() {
 
         {/* Card Info Customer */}
         <div className="bg-white rounded-lg shadow-lg p-3">
-          <div className="grid grid-cols-3 gap-2 mb-3">
+          <div className="grid grid-cols-2 gap-2 mb-3">
             <div className="bg-green-50 rounded p-1.5">
               <p className="text-xs text-green-600 font-medium">Customer</p>
               <p className="text-xs font-bold text-green-800">{CUSTOMER_ID}</p>
             </div>
             <div className="bg-green-50 rounded p-1.5">
-              <p className="text-xs text-green-600 font-medium">Meja</p>
-              <p className="text-xs font-bold text-green-800">{TABLE_ID}</p>
-            </div>
-            <div className="bg-green-50 rounded p-1.5">
               <p className="text-xs text-green-600 font-medium">Nama</p>
               <p className="text-xs font-bold text-green-800">{CUSTOMER_NAME}</p>
+            </div>
+            <div className="bg-green-50 rounded p-1.5">
+              <p className="text-xs text-green-600 font-medium">No. Telepon</p>
+              <p className="text-xs font-bold text-green-800">{CUSTOMER_PHONE}</p>
+            </div>
+            <div className="bg-green-50 rounded p-1.5">
+              <p className="text-xs text-green-600 font-medium">Meja</p>
+              <p className="text-xs font-bold text-green-800">{TABLE_ID}</p>
             </div>
           </div>
 

@@ -3,7 +3,7 @@
 import { useCartStore } from "@/store/cart"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import { Wallet, User, Receipt, ShoppingBag } from "lucide-react"
+import { Wallet, User, Receipt, ShoppingBag, Phone } from "lucide-react"
 
 export default function CashPage() {
   const { items, clearCart } = useCartStore()
@@ -13,6 +13,7 @@ export default function CashPage() {
   // Dummy data (bisa nanti dari API/order nyata)
   const CUSTOMER_ID = "CUST-12345"
   const CUSTOMER_NAME = "John Doe"
+  const CUSTOMER_PHONE = "0812-3456-7890"
   const TABLE_ID = "MEJA-08"
   const ORDER_ID = "ORD-12345"
 
@@ -36,6 +37,7 @@ export default function CashPage() {
         metode: "Cash",
         customerId: CUSTOMER_ID,
         tableId: TABLE_ID,
+        phone: CUSTOMER_PHONE, // Simpan juga no hp
       })),
     ]
     localStorage.setItem("history", JSON.stringify(newHistory))
@@ -79,6 +81,10 @@ export default function CashPage() {
             <div>
               <p className="text-gray-500">Nama</p>
               <p className="font-bold">{CUSTOMER_NAME}</p>
+            </div>
+            <div>
+              <p className="text-gray-500">No. Telepon</p>
+              <p className="font-bold">{CUSTOMER_PHONE}</p>
             </div>
             <div>
               <p className="text-gray-500">Meja</p>

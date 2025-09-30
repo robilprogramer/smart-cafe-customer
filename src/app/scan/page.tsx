@@ -1,20 +1,28 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Camera, QrCode, CheckCircle, AlertCircle, Sparkles, Loader, Coffee } from 'lucide-react';
+import {
+  Camera,
+  QrCode,
+  CheckCircle,
+  AlertCircle,
+  Sparkles,
+  Loader,
+  Coffee,
+} from 'lucide-react';
 
 export default function CafeQRScanner() {
   const [scanning, setScanning] = useState(false);
-  const [hasPermission, setHasPermission] = useState(null);
-  const [scannedData, setScannedData] = useState(null);
-  const [error, setError] = useState('');
-  const [stream, setStream] = useState(null);
-  const videoRef = useRef(null);
-  const canvasRef = useRef(null);
-  const animationFrameRef = useRef(null);
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const [scannedData, setScannedData] = useState<string | null>(null);
+  const [error, setError] = useState<string>('');
+  const [stream, setStream] = useState<MediaStream | null>(null);
+
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
 
   useEffect(() => {
-    // Add floating animation styles
     const style = document.createElement('style');
     style.textContent = `
       @keyframes float {
@@ -45,6 +53,11 @@ export default function CafeQRScanner() {
         0%, 100% { transform: translateY(0); }
         50% { transform: translateY(-20px); }
       }
+      @keyframes scan-line {
+        0% { top: 0%; }
+        50% { top: 100%; }
+        100% { top: 0%; }
+      }
       .animate-float { animation: float ease-in-out infinite; }
       .animate-float-slow { animation: float-slow ease-in-out infinite; }
       .animate-wave { animation: wave 3s ease-in-out infinite; }
@@ -55,9 +68,10 @@ export default function CafeQRScanner() {
         animation: shimmer 2s infinite;
       }
       .animate-bounce-slow { animation: bounce-slow 3s ease-in-out infinite; }
+      .animate-scan-line { animation: scan-line 2s ease-in-out infinite; }
     `;
     document.head.appendChild(style);
-    
+
     return () => {
       stopScanning();
       if (document.head.contains(style)) {
@@ -69,32 +83,48 @@ export default function CafeQRScanner() {
   const startScanning = async () => {
     try {
       setError('');
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: {
           facingMode: 'environment',
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        } 
+          width: { ideal: 640 },
+          height: { ideal: 480 },
+        },
       });
-      
+
       setStream(mediaStream);
       setHasPermission(true);
       setScanning(true);
-      
+
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
         videoRef.current.setAttribute('playsinline', 'true');
-        
-        videoRef.current.onloadedmetadata = () => {
-          videoRef.current.play();
-          requestAnimationFrame(tick);
+        videoRef.current.setAttribute('autoplay', 'true');
+        videoRef.current.setAttribute('muted', 'true');
+
+        videoRef.current.onloadedmetadata = async () => {
+          try {
+            await videoRef.current?.play();
+            animationFrameRef.current = requestAnimationFrame(tick);
+          } catch (playErr) {
+            console.error('Play error:', playErr);
+          }
         };
+
+        setTimeout(async () => {
+          try {
+            await videoRef.current?.play();
+          } catch (e) {
+            console.log('Delayed play attempt:', e);
+          }
+        }, 100);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Camera error:', err);
       setHasPermission(false);
       if (err.name === 'NotAllowedError') {
-        setError('Izin kamera ditolak. Mohon izinkan akses kamera di pengaturan browser Anda.');
+        setError(
+          'Izin kamera ditolak. Mohon izinkan akses kamera di pengaturan browser Anda.'
+        );
       } else if (err.name === 'NotFoundError') {
         setError('Kamera tidak ditemukan. Pastikan perangkat Anda memiliki kamera.');
       } else {
@@ -104,22 +134,19 @@ export default function CafeQRScanner() {
   };
 
   const tick = () => {
-    if (videoRef.current && canvasRef.current && videoRef.current.readyState === videoRef.current.HAVE_ENOUGH_DATA) {
-      const canvas = canvasRef.current;
-      const video = videoRef.current;
-      
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+
+    if (video && canvas && video.readyState === HTMLMediaElement.HAVE_ENOUGH_DATA) {
       canvas.height = video.videoHeight;
       canvas.width = video.videoWidth;
-      
+
       const ctx = canvas.getContext('2d');
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      
-      // Simple QR code detection simulation
-      // In production, use jsQR library: const code = jsQR(imageData.data, imageData.width, imageData.height);
-      
-      // For demo purposes, we'll just continue the loop
+      if (ctx) {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        // Real implementation would use jsQR library here
+      }
+
       if (scanning) {
         animationFrameRef.current = requestAnimationFrame(tick);
       }
@@ -134,23 +161,23 @@ export default function CafeQRScanner() {
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
     }
-    
+
     if (stream) {
-      stream.getTracks().forEach(track => track.stop());
+      stream.getTracks().forEach((track) => track.stop());
       setStream(null);
     }
-    
+
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
-    
+
     setScanning(false);
   };
 
-  const handleScanSuccess = (tableNumber) => {
+  const handleScanSuccess = (tableNumber: string) => {
     setScannedData(tableNumber);
     stopScanning();
-    
+
     setTimeout(() => {
       window.location.href = `/menu?table=${tableNumber}`;
     }, 1500);
@@ -329,12 +356,12 @@ export default function CafeQRScanner() {
                       <div className="absolute top-0 right-0 w-6 h-6 sm:w-8 sm:h-8 border-t-2 border-r-2 sm:border-t-4 sm:border-r-4 border-white rounded-tr-lg"></div>
                       <div className="absolute bottom-0 left-0 w-6 h-6 sm:w-8 sm:h-8 border-b-2 border-l-2 sm:border-b-4 sm:border-l-4 border-white rounded-bl-lg"></div>
                       <div className="absolute bottom-0 right-0 w-6 h-6 sm:w-8 sm:h-8 border-b-2 border-r-2 sm:border-b-4 sm:border-r-4 border-white rounded-br-lg"></div>
+                      
+                      {/* Scanning line */}
+                      <div className="absolute inset-0 overflow-hidden">
+                        <div className="absolute left-0 right-0 h-0.5 sm:h-1 bg-emerald-400 animate-scan-line shadow-lg shadow-emerald-400/50"></div>
+                      </div>
                     </div>
-                  </div>
-
-                  {/* Scanning line */}
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="w-36 sm:w-48 h-0.5 sm:h-1 bg-emerald-400 animate-pulse shadow-lg shadow-emerald-400/50"></div>
                   </div>
                 </div>
 

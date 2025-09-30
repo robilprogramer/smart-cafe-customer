@@ -14,6 +14,7 @@ export default function BrivaPage() {
   // Hardcoded data
   const CUSTOMER_ID = "CUST-12345"
   const CUSTOMER_NAME = "John Doe"
+  const CUSTOMER_PHONE = "081234567890" // ✅ nomor telepon
   const TABLE_ID = "MEJA-08"
   const ORDER_ID = "ORD-12345"
   const VA_NUMBER = "88810123456789012"
@@ -86,6 +87,8 @@ export default function BrivaPage() {
         date: new Date().toLocaleString(),
         metode: "BRIVA",
         customerId: CUSTOMER_ID,
+        customerName: CUSTOMER_NAME,
+        customerPhone: CUSTOMER_PHONE, // ✅ simpan nomor telepon
         tableId: TABLE_ID,
       })),
     ]
@@ -131,26 +134,24 @@ export default function BrivaPage() {
               </svg>
               <span className="text-xs text-gray-600">Waktu tersisa:</span>
             </div>
-            <span className={`text-lg font-bold ${timeLeft <= 60 ? 'text-red-600' : 'text-blue-600'}`}>
+            <span className={`text-lg font-bold ${timeLeft <= 60 ? "text-red-600" : "text-blue-600"}`}>
               {formatTime(timeLeft)}
             </span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-1 overflow-hidden">
-            <div 
-              className={`h-full transition-all duration-1000 ${timeLeft <= 60 ? 'bg-red-500' : 'bg-blue-600'}`}
+            <div
+              className={`h-full transition-all duration-1000 ${timeLeft <= 60 ? "bg-red-500" : "bg-blue-600"}`}
               style={{ width: `${timePercentage}%` }}
             />
           </div>
           {timeLeft <= 60 && (
-            <p className="text-xs text-red-600 mt-1 text-center font-medium">
-              ⚠️ Waktu hampir habis!
-            </p>
+            <p className="text-xs text-red-600 mt-1 text-center font-medium">⚠️ Waktu hampir habis!</p>
           )}
         </div>
 
         {/* Card Info Customer */}
         <div className="bg-white rounded-lg shadow-lg p-3">
-          <div className="grid grid-cols-3 gap-2 mb-3">
+          <div className="grid grid-cols-2 gap-2 mb-3">
             <div className="bg-blue-50 rounded p-1.5">
               <p className="text-xs text-blue-600 font-medium">Customer</p>
               <p className="text-xs font-bold text-blue-800">{CUSTOMER_ID}</p>
@@ -162,6 +163,10 @@ export default function BrivaPage() {
             <div className="bg-blue-50 rounded p-1.5">
               <p className="text-xs text-blue-600 font-medium">Nama</p>
               <p className="text-xs font-bold text-blue-800">{CUSTOMER_NAME}</p>
+            </div>
+            <div className="bg-blue-50 rounded p-1.5">
+              <p className="text-xs text-blue-600 font-medium">No. Telepon</p>
+              <p className="text-xs font-bold text-blue-800">{CUSTOMER_PHONE}</p>
             </div>
           </div>
 
