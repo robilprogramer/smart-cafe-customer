@@ -12,9 +12,10 @@ interface MenuItem {
 
 interface SidebarProps {
   isOpen: boolean;
+  onClose: () => void;
 }
 
-export default function Sidebar({ isOpen }: SidebarProps) {
+export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const menuItems: MenuItem[] = [
     { icon: Home, label: 'Beranda', href: '#', active: true },
     { icon: Users, label: 'Pengguna', href: '/admin/users', active: false },
@@ -29,7 +30,10 @@ export default function Sidebar({ isOpen }: SidebarProps) {
     <>
       {/* Overlay for mobile */}
       {isOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden" />
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"
+          onClick={onClose}
+        />
       )}
       
       <aside
@@ -44,20 +48,23 @@ export default function Sidebar({ isOpen }: SidebarProps) {
             </p>
           </div>
           
-          {menuItems.map((item, index) => (
-            <a
-              key={index}
-              href={item.href}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                item.active
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-300 hover:bg-gray-800'
-              }`}
-            >
-              <item.icon size={20} />
-              <span className="font-medium">{item.label}</span>
-            </a>
-          ))}
+          {menuItems.map((item, index) => {
+            const Icon = item.icon;
+            return (
+              <a
+                key={index}
+                href={item.href}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                  item.active
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-300 hover:bg-gray-800'
+                }`}
+              >
+                <Icon size={20} />
+                <span className="font-medium">{item.label}</span>
+              </a>
+            );
+          })}
           
           <div className="pt-4 mt-4 border-t border-gray-700">
             <button className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-800 transition-colors w-full">
@@ -70,4 +77,3 @@ export default function Sidebar({ isOpen }: SidebarProps) {
     </>
   );
 }
-

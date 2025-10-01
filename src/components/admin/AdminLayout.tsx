@@ -16,12 +16,16 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
+  const closeSidebar = () => {
+    setIsSidebarOpen(false);
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header onToggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
       
       <div className="flex flex-1 pt-16">
-        <Sidebar isOpen={isSidebarOpen} />
+        <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
         
         <main
           className={`flex-1 transition-all duration-300 ${
@@ -34,8 +38,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </main>
       </div>
       
-      <Footer />
+      <Footer isSidebarOpen={isSidebarOpen} />
     </div>
   );
 }
-
