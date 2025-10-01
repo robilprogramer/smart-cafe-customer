@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { Menu, X, Bell, Search } from "lucide-react"
 import { useState, useEffect } from "react"
@@ -11,11 +11,12 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
+    DialogFooter,
     DialogTrigger,
 } from "@/components/ui/dialog"
-
-import LoginForm from "@/components/auth/LoginForm" // Ganti jalur sesuai lokasi aslinya
-import RegisterForm from "@/components/auth/RegisterForm" // Ganti jalur sesuai lokasi aslinya
+import { Button } from "@/components/ui/button"
+import LoginForm from "@/components/auth/LoginForm"
+import RegisterForm from "@/components/auth/RegisterForm"
 
 interface HeaderProps {
     onToggleSidebar: () => void
@@ -24,8 +25,8 @@ interface HeaderProps {
 
 export default function Header({ onToggleSidebar, isSidebarOpen }: HeaderProps) {
     const [user, setUser] = useState<User | null>(null)
-    // 💡 1. Tambahkan state untuk mengontrol modal login
-    const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
+    const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false)
+    const [isLoginMode, setIsLoginMode] = useState(true) // switch antara login & register
     const router = useRouter()
 
     useEffect(() => {
@@ -35,22 +36,17 @@ export default function Header({ onToggleSidebar, isSidebarOpen }: HeaderProps) 
     const handleLogout = () => {
         logoutUser()
         setUser(null)
-        // ✅ Logout diarahkan ke /admin
         router.push("/admin")
     }
 
-    // 💡 2. Tambahkan fungsi callback untuk dipanggil dari LoginForm
     const handleLoginSuccess = () => {
-        // Memperbarui user state agar Header menampilkan profil
-        setUser(getCurrentUser()); 
-        // Menutup modal login
-        setIsLoginModalOpen(false); 
-    };
+        setUser(getCurrentUser())
+        setIsAuthDialogOpen(false)
+    }
 
     return (
         <header className="bg-white shadow-md fixed top-0 left-0 right-0 z-30 h-16">
             <div className="flex items-center justify-between h-full px-4">
-                {/* Sidebar Toggle */}
                 <div className="flex items-center gap-4">
                     <button
                         onClick={onToggleSidebar}
@@ -62,9 +58,7 @@ export default function Header({ onToggleSidebar, isSidebarOpen }: HeaderProps) 
                     <h1 className="text-xl font-bold text-gray-800">Admin Dashboard</h1>
                 </div>
 
-                {/* Right Side */}
                 <div className="flex items-center gap-4">
-                    {/* Search */}
                     <div className="hidden md:flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2">
                         <Search size={18} className="text-gray-400" />
                         <input
@@ -74,13 +68,11 @@ export default function Header({ onToggleSidebar, isSidebarOpen }: HeaderProps) 
                         />
                     </div>
 
-                    {/* Notification */}
                     <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors relative">
                         <Bell size={20} className="text-gray-600" />
                         <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
                     </button>
 
-                    {/* User Profile / Auth */}
                     {user ? (
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold">
@@ -90,47 +82,56 @@ export default function Header({ onToggleSidebar, isSidebarOpen }: HeaderProps) 
                                 <p className="font-medium text-gray-800">{user.name}</p>
                                 <p className="text-gray-500 text-xs">{user.email}</p>
                             </div>
-                            <button
+                            {/* <button
                                 onClick={handleLogout}
                                 className="px-3 py-1 text-sm rounded-md bg-red-500 text-white hover:bg-red-600"
                             >
                                 Logout
-                            </button>
+                            </button> */}
                         </div>
                     ) : (
-                        <div className="flex gap-2">
-                            {/* Sign In Modal */}
-                            {/* 💡 Gunakan 'open' dan 'onOpenChange' untuk mengontrol state modal */}
-                            <Dialog open={isLoginModalOpen} onOpenChange={setIsLoginModalOpen}>
+                        <>
+                            {/* Dialog Login/Register dengan switch */}
+                            <Dialog open={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen}>
                                 <DialogTrigger asChild>
-                                    <button className="px-3 py-1 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700">
-                                        Sign In
-                                    </button>
+                                    <Button variant="default">Sign In / Sign Up</Button>
                                 </DialogTrigger>
                                 <DialogContent className="sm:max-w-md rounded-xl shadow-lg">
                                     <DialogHeader>
-                                        <DialogTitle className="text-xl font-bold text-center">Login ke Dashboard</DialogTitle>
+                                        <DialogTitle className="text-xl font-bold text-center">
+                                            {isLoginMode ? "Login ke Dashboard" : "Buat Akun Baru"}
+                                        </DialogTitle>
                                     </DialogHeader>
-                                    {/* 💡 Teruskan callback ke LoginForm */}
-                                    <LoginForm onLoginSuccess={handleLoginSuccess} />
-                                </DialogContent>
-                            </Dialog>
 
-                            {/* Sign Up Modal */}
-                            <Dialog>
-                                <DialogTrigger asChild>
-                                    <button className="px-3 py-1 text-sm rounded-md bg-gray-200 text-gray-800 hover:bg-gray-300">
-                                        Sign Up
-                                    </button>
-                                </DialogTrigger>
-                                <DialogContent className="sm:max-w-md rounded-xl shadow-lg">
-                                    <DialogHeader>
-                                        <DialogTitle className="text-xl font-bold text-center">Buat Akun Baru</DialogTitle>
-                                    </DialogHeader>
-                                    <RegisterForm />
+                                    {/* Switch antara Login / Register */}
+                                    <div className="flex justify-center mb-4 gap-2">
+                                        <Button
+                                            variant={isLoginMode ? "default" : "outline"}
+                                            onClick={() => setIsLoginMode(true)}
+                                        >
+                                            Login
+                                        </Button>
+                                        <Button
+                                            variant={!isLoginMode ? "default" : "outline"}
+                                            onClick={() => setIsLoginMode(false)}
+                                        >
+                                            Register
+                                        </Button>
+                                    </div>
+
+                                    {/* Form */}
+                                    {isLoginMode ? (
+                                        <LoginForm onLoginSuccess={handleLoginSuccess} />
+                                    ) : (
+                                        <RegisterForm />
+                                    )}
+
+                                    <DialogFooter className="mt-2">
+                                        <Button variant="secondary" onClick={() => setIsAuthDialogOpen(false)}>Tutup</Button>
+                                    </DialogFooter>
                                 </DialogContent>
                             </Dialog>
-                        </div>
+                        </>
                     )}
                 </div>
             </div>
