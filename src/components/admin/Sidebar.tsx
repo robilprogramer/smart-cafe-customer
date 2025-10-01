@@ -63,6 +63,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     { icon: Package, label: 'Produk', href: '/admin/products' },
     { icon: BarChart3, label: 'Laporan', href: '/admin/laporan' },
     { icon: Mail, label: 'Pesan', href: '/admin/pesan' },
+    { icon: Package, label: 'Promo', href: '/admin/promo' },
     { icon: Settings, label: 'Pengaturan', href: '/admin/settings' },
   ];
 
