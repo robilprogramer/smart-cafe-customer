@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
+import { Button } from "@/components/ui/button";
 
 interface Pengguna {
   id: number;
@@ -20,8 +21,20 @@ interface StoredUser {
 
 export default function PenggunaPage() {
   const [users, setUsers] = useState<Pengguna[]>([]);
+  const [currentUserRole, setCurrentUserRole] = useState<string>("");
 
   useEffect(() => {
+    loadUsers();
+    
+    // Ambil role user yang sedang login
+    const currentUser = localStorage.getItem("currentUser");
+    if (currentUser) {
+      const user = JSON.parse(currentUser);
+      setCurrentUserRole(user.role);
+    }
+  }, []);
+
+  const loadUsers = () => {
     const storedUsers = localStorage.getItem("users");
     if (storedUsers) {
       const parsedUsers: StoredUser[] = JSON.parse(storedUsers);
@@ -33,7 +46,29 @@ export default function PenggunaPage() {
       }));
       setUsers(usersWithId);
     }
-  }, []);
+  };
+
+  const handleDelete = (email: string, nama: string) => {
+    // Cek apakah user yang login adalah superadmin
+    if (currentUserRole !== "superadmin") {
+      alert("Anda tidak memiliki akses untuk menghapus pengguna!");
+      return;
+    }
+
+    if (!confirm(`Apakah Anda yakin ingin menghapus pengguna "${nama}"?`)) {
+      return;
+    }
+
+    const storedUsers = localStorage.getItem("users");
+    if (storedUsers) {
+      const parsedUsers: StoredUser[] = JSON.parse(storedUsers);
+      const filteredUsers = parsedUsers.filter((user) => user.email !== email);
+      localStorage.setItem("users", JSON.stringify(filteredUsers));
+      
+      alert(`Pengguna "${nama}" berhasil dihapus!`);
+      loadUsers(); // Reload data setelah hapus
+    }
+  };
 
   return (
     <AdminLayout>
@@ -50,9 +85,16 @@ export default function PenggunaPage() {
 
         {/* Tabel Pengguna */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">
-            Daftar Pengguna
-          </h3>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold text-gray-800">
+              Daftar Pengguna
+            </h3>
+            {currentUserRole === "admin" && (
+              <span className="text-sm text-gray-500 italic">
+                (Mode baca saja - hanya Super Admin yang bisa menghapus)
+              </span>
+            )}
+          </div>
 
           <div className="overflow-x-auto">
             <table className="w-full border-collapse border border-gray-200">
@@ -70,6 +112,11 @@ export default function PenggunaPage() {
                   <th className="border border-gray-200 px-4 py-2 text-left text-sm font-medium text-gray-600">
                     Role
                   </th>
+                  {currentUserRole === "superadmin" && (
+                    <th className="border border-gray-200 px-4 py-2 text-center text-sm font-medium text-gray-600">
+                      Aksi
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -89,6 +136,17 @@ export default function PenggunaPage() {
                         {user.role}
                       </span>
                     </td>
+                    {currentUserRole === "superadmin" && (
+                      <td className="border border-gray-200 px-4 py-2 text-center">
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDelete(user.email, user.nama)}
+                        >
+                          Hapus
+                        </Button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

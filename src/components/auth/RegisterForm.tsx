@@ -15,7 +15,7 @@ export default function RegisterForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role] = useState("user"); // default role
+  const [role, setRole] = useState("admin"); // default role admin
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,6 +36,7 @@ export default function RegisterForm() {
     setName("");
     setEmail("");
     setPassword("");
+    setRole("admin");
   };
 
   return (
@@ -61,6 +62,18 @@ export default function RegisterForm() {
         onChange={(e) => setPassword(e.target.value)}
         required
       />
+      <div>
+        <label className="block text-sm font-medium mb-2">Role</label>
+        <select
+          value={role}
+          onChange={(e) => setRole(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          required
+        >
+          <option value="admin">Admin</option>
+          <option value="superadmin">Super Admin</option>
+        </select>
+      </div>
       <Button type="submit" className="w-full">
         Daftar
       </Button>

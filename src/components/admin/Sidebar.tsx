@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect, useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { Home, Users, FileText, Settings, BarChart3, LogOut, Package, Mail } from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
@@ -8,17 +10,58 @@ interface MenuItem {
   icon: LucideIcon;
   label: string;
   href: string;
-  active?: boolean;
 }
 
 interface SidebarProps {
   isOpen: boolean;
-  onClose: () => void;  // ✅ Tambahkan prop ini
+  onClose: () => void;
 }
 
-export default function Sidebar({ isOpen, onClose }: SidebarProps) {  // ✅ Destructure onClose
-  const menuItems: MenuItem[] = [
-    { icon: Home, label: 'Beranda', href: '/admin', active: true },
+export default function Sidebar({ isOpen, onClose }: SidebarProps) {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // Fungsi untuk cek status login
+  const checkLoginStatus = () => {
+    const currentUser = localStorage.getItem("currentUser");
+    setIsLoggedIn(!!currentUser);
+  };
+
+  useEffect(() => {
+    // Cek status login saat komponen dimount
+    checkLoginStatus();
+
+    // Listen untuk perubahan localStorage (untuk cross-tab sync)
+    window.addEventListener('storage', checkLoginStatus);
+
+    // Interval check untuk memastikan selalu update
+    const interval = setInterval(checkLoginStatus, 500);
+
+    return () => {
+      window.removeEventListener('storage', checkLoginStatus);
+      clearInterval(interval);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    if (confirm("Apakah Anda yakin ingin keluar?")) {
+      // Hapus currentUser dari localStorage
+      localStorage.removeItem("currentUser");
+      
+      // Update state
+      setIsLoggedIn(false);
+      
+      // Redirect ke /admin
+      router.push("/admin");
+      
+      // Reload halaman untuk memastikan semua state ter-reset
+      window.location.reload();
+    }
+  };
+
+  const allMenuItems: MenuItem[] = [
+    { icon: Home, label: 'Beranda', href: '/admin' },
     { icon: Users, label: 'Pengguna', href: '/admin/users' },
     { icon: FileText, label: 'Konten', href: '/admin/konten' },
     { icon: Package, label: 'Produk', href: '/admin/products' },
@@ -27,13 +70,16 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {  // ✅ Des
     { icon: Settings, label: 'Pengaturan', href: '/admin/settings' },
   ];
 
+  // Jika belum login, hanya tampilkan Beranda
+  const menuItems = isLoggedIn ? allMenuItems : [allMenuItems[0]];
+
   return (
     <>
       {/* Overlay for mobile */}
       {isOpen && (
         <div 
           className="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"
-          onClick={onClose}  // ✅ Tambahkan onClick handler
+          onClick={onClose}
         />
       )}
       
@@ -49,28 +95,39 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {  // ✅ Des
             </p>
           </div>
           
-          {menuItems.map((item, index) => (
-            <Link
-              key={index}
-              href={item.href}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                item.active
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-300 hover:bg-gray-800'
-              }`}
-              onClick={() => window.innerWidth < 1024 && onClose()}  // ✅ Tutup sidebar di mobile saat link diklik
-            >
-              <item.icon size={20} />
-              <span className="font-medium">{item.label}</span>
-            </Link>
-          ))}
+          {menuItems.map((item, index) => {
+            // Cek apakah menu ini yang sedang aktif
+            const isActive = pathname === item.href;
+            
+            return (
+              <Link
+                key={index}
+                href={item.href}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                  isActive
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-300 hover:bg-gray-800'
+                }`}
+                onClick={() => window.innerWidth < 1024 && onClose()}
+              >
+                <item.icon size={20} />
+                <span className="font-medium">{item.label}</span>
+              </Link>
+            );
+          })}
           
-          <div className="pt-4 mt-4 border-t border-gray-700">
-            <button className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-800 transition-colors w-full">
-              <LogOut size={20} />
-              <span className="font-medium">Keluar</span>
-            </button>
-          </div>
+          {/* Tombol Keluar hanya muncul jika sudah login */}
+          {isLoggedIn && (
+            <div className="pt-4 mt-4 border-t border-gray-700">
+              <button 
+                onClick={handleLogout}
+                className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-red-600 hover:text-white transition-colors w-full"
+              >
+                <LogOut size={20} />
+                <span className="font-medium">Keluar</span>
+              </button>
+            </div>
+          )}
         </nav>
       </aside>
     </>

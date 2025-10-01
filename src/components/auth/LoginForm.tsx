@@ -46,8 +46,10 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
         // 💡 Panggil callback untuk menutup modal di Header
         onLoginSuccess && onLoginSuccess(); 
 
-        // ✅ Redirect otomatis ke /admin setelah login berhasil
-        if (user.role === "Admin") {
+        // ✅ Redirect berdasarkan role
+        if (user.role === "admin") {
+            router.push("/admin"); 
+        } else if (user.role === "superadmin") {
             router.push("/admin"); 
         } else {
             router.push("/");
