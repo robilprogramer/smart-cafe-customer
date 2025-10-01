@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
 
 interface Pengguna {
@@ -9,19 +10,39 @@ interface Pengguna {
   role: string;
 }
 
+// tipe user yang disimpan di localStorage saat register
+interface StoredUser {
+  name: string;
+  email: string;
+  password: string;
+  role: string;
+}
+
 export default function PenggunaPage() {
-  const users: Pengguna[] = [
-    { id: 1, nama: "Robil Putra", email: "robil@example.com", role: "Admin" },
-    { id: 2, nama: "Didit", email: "didit@example.com", role: "Kasir" },
-    { id: 3, nama: "Sinta", email: "sinta@example.com", role: "Pelayan" },
-  ];
+  const [users, setUsers] = useState<Pengguna[]>([]);
+
+  useEffect(() => {
+    const storedUsers = localStorage.getItem("users");
+    if (storedUsers) {
+      const parsedUsers: StoredUser[] = JSON.parse(storedUsers);
+      const usersWithId: Pengguna[] = parsedUsers.map((user, index) => ({
+        id: index + 1,
+        nama: user.name,
+        email: user.email,
+        role: user.role,
+      }));
+      setUsers(usersWithId);
+    }
+  }, []);
 
   return (
     <AdminLayout>
       <div className="space-y-6">
         {/* Page Title */}
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">Manajemen Pengguna</h2>
+          <h2 className="text-2xl font-bold text-gray-800">
+            Manajemen Pengguna
+          </h2>
           <p className="text-gray-600 mt-1">
             Kelola data pengguna yang memiliki akses ke sistem
           </p>
@@ -72,6 +93,12 @@ export default function PenggunaPage() {
                 ))}
               </tbody>
             </table>
+
+            {users.length === 0 && (
+              <p className="text-center text-gray-500 mt-4">
+                Belum ada pengguna terdaftar.
+              </p>
+            )}
           </div>
         </div>
       </div>
