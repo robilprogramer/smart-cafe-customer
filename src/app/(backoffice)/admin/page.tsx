@@ -15,7 +15,7 @@ import {
   Cell,
   Legend,
 } from 'recharts';
-import { Users, FileText, Eye, DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
+import { Users, FileText, Eye, DollarSign, TrendingUp, TrendingDown, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface User {
   name: string;
@@ -23,9 +23,46 @@ interface User {
   role: string;
 }
 
+// ========================================
+// BAGIAN BARU: Data untuk Slider Banner dengan Gambar
+// ========================================
+const bannerSlides = [
+  {
+    title: "Selamat Datang di Dashboard",
+    description: "Ringkasan aktivitas dan statistik sistem",
+    gradient: "from-green-500 to-green-700",
+    image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&q=80",
+  },
+  {
+    title: "Kelola Pengguna Anda",
+    description: "Monitor dan tingkatkan engagement pengguna",
+    gradient: "from-blue-500 to-blue-700",
+    image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&q=80",
+  },
+  {
+    title: "Analisis Performa Real-time",
+    description: "Data terkini untuk keputusan yang lebih baik",
+    gradient: "from-purple-500 to-purple-700",
+    image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&q=80",
+  },
+  {
+    title: "Tingkatkan Pendapatan",
+    description: "Optimasi strategi bisnis Anda",
+    gradient: "from-orange-500 to-orange-700",
+    image: "https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=800&q=80",
+  },
+];
+// ========================================
+
 export default function AdminDashboard() {
   const [users, setUsers] = useState<User[]>([]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  
+  // ========================================
+  // BAGIAN BARU: State untuk tracking slide
+  // ========================================
+  const [currentSlide, setCurrentSlide] = useState(0);
+  // ========================================
 
   const checkLoginStatus = () => {
     const currentUser = localStorage.getItem("currentUser");
@@ -52,14 +89,33 @@ export default function AdminDashboard() {
     };
   }, []);
 
-  // Fungsi untuk handle klik tombol login
-  const handleLoginClick = () => {
-    // Trigger dialog login di Header component
-    const signInButton = document.querySelector('button:has-text("Sign In")') as HTMLButtonElement;
-    if (signInButton) {
-      signInButton.click();
-    }
+  // ========================================
+  // BAGIAN BARU: Auto-play slider setiap 5 detik
+  // ========================================
+  useEffect(() => {
+    const slideInterval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % bannerSlides.length);
+    }, 5000);
+
+    return () => clearInterval(slideInterval);
+  }, []);
+  // ========================================
+
+  // ========================================
+  // BAGIAN BARU: Fungsi navigasi slider
+  // ========================================
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % bannerSlides.length);
   };
+
+  const prevSlide = () => {
+    setCurrentSlide((prev) => (prev - 1 + bannerSlides.length) % bannerSlides.length);
+  };
+
+  const goToSlide = (index: number) => {
+    setCurrentSlide(index);
+  };
+  // ========================================
 
   const stats = [
     { 
@@ -104,7 +160,6 @@ export default function AdminDashboard() {
     },
   ];
 
-  // Data untuk diagram batang (Total Pengguna)
   const barChartData = [
     { month: 'Jan', value: 45 },
     { month: 'Feb', value: 52 },
@@ -115,7 +170,6 @@ export default function AdminDashboard() {
     { month: 'Jul', value: users.length },
   ];
 
-  // Data untuk line chart (metrics lainnya) - data yang lebih smooth
   const lineChartData = [
     { month: 'Jan', konten: 420, kunjungan: 7200, pendapatan: 38000 },
     { month: 'Feb', konten: 465, kunjungan: 6850, pendapatan: 40500 },
@@ -129,12 +183,71 @@ export default function AdminDashboard() {
   return (
     <AdminLayout>
       <div className="space-y-8">
-        {/* Header Section */}
-        <div className="bg-gradient-to-r from-green-500 to-green-700 rounded-2xl p-8 text-white shadow-lg">
-            <h2 className="text-3xl font-bold mb-2">Selamat Datang di Dashboard</h2>
-            <p className="text-green-100 text-lg">Ringkasan aktivitas dan statistik sistem</p>
-        </div>
+        {/* ======================================== */}
+        {/* BAGIAN BARU: Banner Slider dengan Gambar */}
+        {/* ======================================== */}
+        <div className="relative overflow-hidden rounded-2xl shadow-lg h-80">
+          {/* Container untuk semua slide */}
+          <div 
+            className="flex transition-transform duration-500 ease-out h-full"
+            style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+          >
+            {bannerSlides.map((slide, index) => (
+              <div
+                key={index}
+                className="min-w-full h-full relative"
+              >
+                {/* Background Image dengan Overlay */}
+                <div 
+                  className="absolute inset-0 bg-cover bg-center"
+                  style={{ backgroundImage: `url(${slide.image})` }}
+                >
+                  <div className={`absolute inset-0 bg-gradient-to-r ${slide.gradient} opacity-85`}></div>
+                </div>
+                
+                {/* Content */}
+                <div className="relative h-full flex flex-col justify-center p-8 text-white">
+                  <h2 className="text-4xl font-bold mb-3 drop-shadow-lg">{slide.title}</h2>
+                  <p className="text-white/95 text-xl drop-shadow-md max-w-2xl">{slide.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
 
+          {/* Tombol Navigasi Kiri */}
+          <button
+            onClick={prevSlide}
+            className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 backdrop-blur-sm p-3 rounded-full transition-all hover:scale-110"
+          >
+            <ChevronLeft className="w-6 h-6 text-white" />
+          </button>
+
+          {/* Tombol Navigasi Kanan */}
+          <button
+            onClick={nextSlide}
+            className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 backdrop-blur-sm p-3 rounded-full transition-all hover:scale-110"
+          >
+            <ChevronRight className="w-6 h-6 text-white" />
+          </button>
+
+          {/* Dot Indicators */}
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
+            {bannerSlides.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => goToSlide(index)}
+                className={`h-2 rounded-full transition-all ${
+                  currentSlide === index 
+                    ? 'bg-white w-8' 
+                    : 'bg-white/50 hover:bg-white/75 w-2'
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+        {/* ======================================== */}
+        {/* AKHIR Banner Slider */}
+        {/* ======================================== */}
 
         {isLoggedIn ? (
           <>
@@ -306,10 +419,9 @@ export default function AdminDashboard() {
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-bold text-gray-900">Aktivitas Terbaru</h3>
-               <button className="text-sm text-green-600 hover:text-green-700 font-medium">
-                 Lihat Semua
-               </button>
-
+                <button className="text-sm text-green-600 hover:text-green-700 font-medium">
+                  Lihat Semua
+                </button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {users.length > 0 ? (
@@ -318,8 +430,7 @@ export default function AdminDashboard() {
                       key={idx} 
                       className="flex items-center gap-4 p-4 rounded-xl border border-gray-100 hover:border-blue-200 hover:bg-blue-50 transition-all group"
                     >
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
-
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
                         <span className="text-white font-bold text-lg">
                           {user.name ? user.name[0].toUpperCase() : 'U'}
                         </span>
@@ -343,8 +454,6 @@ export default function AdminDashboard() {
                 )}
               </div>
             </div>
-
-
           </>
         ) : (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-16 text-center">
@@ -353,7 +462,6 @@ export default function AdminDashboard() {
             </div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">Akses Terbatas</h3>
             <p className="text-gray-600 mb-6">Silakan login terlebih dahulu untuk mengakses dashboard</p>
-           
           </div>
         )}
       </div>
