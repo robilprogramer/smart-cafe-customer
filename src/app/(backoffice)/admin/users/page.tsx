@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { Button } from "@/components/ui/button";
+import { Pencil, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 
 interface Pengguna {
@@ -30,6 +31,10 @@ export default function PenggunaPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("admin");
+
+  // state untuk edit
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingEmail, setEditingEmail] = useState("");
 
   const loadUsers = useCallback(() => {
     const storedUsers = localStorage.getItem("users");
@@ -100,44 +105,88 @@ export default function PenggunaPage() {
     [currentUserRole, loadUsers]
   );
 
+  const handleEdit = (user: Pengguna) => {
+    if (currentUserRole !== "superadmin") {
+      toast.error("Anda tidak memiliki akses untuk mengedit pengguna!");
+      return;
+    }
+
+    setIsEditMode(true);
+    setEditingEmail(user.email);
+    setName(user.nama);
+    setEmail(user.email);
+    setPassword(""); // kosongkan password untuk keamanan
+    setRole(user.role);
+    setShowRegisterForm(true);
+  };
+
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
 
     const storedUsers = localStorage.getItem("users");
     let usersArray: StoredUser[] = [];
-if (storedUsers) {
-  try {
-    usersArray = JSON.parse(storedUsers) as StoredUser[];
-  } catch (error) {
-    console.error("Gagal parsing users dari localStorage:", error);
-  }
-}
-
-
-    // cek duplicate email
-    if (usersArray.some((user) => user.email === email)) {
-      toast.error("Email sudah digunakan!");
-      return;
+    if (storedUsers) {
+      try {
+        usersArray = JSON.parse(storedUsers) as StoredUser[];
+      } catch (error) {
+        console.error("Gagal parsing users dari localStorage:", error);
+      }
     }
 
-    usersArray.push({
-      name,
-      email,
-      password,
-      role,
-    });
+    if (isEditMode) {
+      // Mode Edit
+      const userIndex = usersArray.findIndex((user) => user.email === editingEmail);
+      
+      if (userIndex !== -1) {
+        // Cek jika email diubah, pastikan tidak duplikat
+        if (email !== editingEmail && usersArray.some((user) => user.email === email)) {
+          toast.error("Email sudah digunakan!");
+          return;
+        }
 
-    localStorage.setItem("users", JSON.stringify(usersArray));
-    toast.success("Pengguna berhasil ditambahkan");
+        // Update user
+        usersArray[userIndex] = {
+          name,
+          email,
+          password: password || usersArray[userIndex].password, // jika password kosong, pakai yang lama
+          role,
+        };
+
+        localStorage.setItem("users", JSON.stringify(usersArray));
+        toast.success("Pengguna berhasil diperbarui");
+      }
+    } else {
+      // Mode Tambah Baru
+      // cek duplicate email
+      if (usersArray.some((user) => user.email === email)) {
+        toast.error("Email sudah digunakan!");
+        return;
+      }
+
+      usersArray.push({
+        name,
+        email,
+        password,
+        role,
+      });
+
+      localStorage.setItem("users", JSON.stringify(usersArray));
+      toast.success("Pengguna berhasil ditambahkan");
+    }
 
     // reset form
+    resetForm();
+    loadUsers();
+  };
+
+  const resetForm = () => {
     setName("");
     setEmail("");
     setPassword("");
     setRole("admin");
     setShowRegisterForm(false);
-
-    loadUsers();
+    setIsEditMode(false);
+    setEditingEmail("");
   };
 
   return (
@@ -155,18 +204,34 @@ if (storedUsers) {
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-gray-800">Daftar Pengguna</h3>
               {currentUserRole === "superadmin" && (
-                <Button onClick={() => setShowRegisterForm((prev) => !prev)}>
+                <Button 
+                  onClick={() => {
+                    if (showRegisterForm && isEditMode) {
+                      resetForm();
+                    } else {
+                      setShowRegisterForm((prev) => !prev);
+                      if (!showRegisterForm) {
+                        setIsEditMode(false);
+                      }
+                    }
+                  }}
+                >
                   {showRegisterForm ? "Tutup Form" : "Tambah Pengguna"}
                 </Button>
               )}
             </div>
 
-            {/* Form Tambah User */}
+            {/* Form Tambah/Edit User */}
             {showRegisterForm && currentUserRole === "superadmin" && (
               <form
                 onSubmit={handleRegister}
-                className="space-y-3 bg-gray-50 p-4 rounded-md mb-6"
+                className="space-y-3 bg-gray-50 p-4 rounded-md mb-6 border-2 border-gray-200"
               >
+                <div className="mb-2">
+                  <h4 className="font-semibold text-gray-700">
+                    {isEditMode ? "Edit Pengguna" : "Tambah Pengguna Baru"}
+                  </h4>
+                </div>
                 <input
                   type="text"
                   placeholder="Nama"
@@ -185,10 +250,10 @@ if (storedUsers) {
                 />
                 <input
                   type="password"
-                  placeholder="Password"
+                  placeholder={isEditMode ? "Password (kosongkan jika tidak ingin diubah)" : "Password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  required
+                  required={!isEditMode}
                   className="w-full border px-3 py-2 rounded-md"
                 />
                 <select
@@ -201,9 +266,21 @@ if (storedUsers) {
                   <option value="pelayan">Pelayan</option>
                   <option value="superadmin">Super Admin</option>
                 </select>
-                <Button type="submit" className="w-full bg-green-600">
-                  Register
-                </Button>
+                <div className="flex gap-2">
+                  <Button type="submit" className="flex-1 bg-green-600">
+                    {isEditMode ? "Update" : "Register"}
+                  </Button>
+                  {isEditMode && (
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={resetForm}
+                      className="flex-1"
+                    >
+                      Batal
+                    </Button>
+                  )}
+                </div>
               </form>
             )}
 
@@ -233,14 +310,27 @@ if (storedUsers) {
                         </span>
                       </td>
                       {currentUserRole === "superadmin" && (
-                        <td className="border border-gray-200 px-4 py-2 text-center">
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDelete(user.email, user.nama)}
-                          >
-                            Hapus
-                          </Button>
+                        <td className="border border-gray-200 px-4 py-2">
+                          <div className="flex gap-2 justify-center">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEdit(user)}
+                              className="flex items-center gap-1"
+                            >
+                              <Pencil size={14} />
+                              Edit
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDelete(user.email, user.nama)}
+                              className="flex items-center gap-1"
+                            >
+                              <Trash2 size={14} />
+                              Hapus
+                            </Button>
+                          </div>
                         </td>
                       )}
                     </tr>

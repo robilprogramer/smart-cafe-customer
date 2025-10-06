@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, X, Bell, Search } from "lucide-react";
+import { Menu, X, Bell, Search, LogOut, Settings, User as UserIcon } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { getCurrentUser, logoutUser, User } from "@/lib/auth";
 import { useRouter } from "next/navigation";
@@ -42,7 +42,9 @@ export default function Header({ onToggleSidebar, isSidebarOpen }: HeaderProps) 
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<typeof menuItems>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -68,11 +70,14 @@ export default function Header({ onToggleSidebar, isSidebarOpen }: HeaderProps) 
     setShowSearchResults(true);
   }, [searchQuery]);
 
-  // Close search results when clicking outside
+  // Close search results and profile menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
         setShowSearchResults(false);
+      }
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setShowProfileMenu(false);
       }
     };
 
@@ -167,17 +172,91 @@ export default function Header({ onToggleSidebar, isSidebarOpen }: HeaderProps) 
           </button>
 
           {user ? (
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
-                {user.name.charAt(0)}
-              </div>
-              <div className="hidden md:block text-sm">
-                <p className="font-medium text-gray-800">{user.name}</p>
-                <p className="text-gray-500 text-xs">{user.email}</p>
-              </div>
-              <Button variant="outline" size="sm" onClick={handleLogout}>
-                Logout
-              </Button>
+            <div className="relative" ref={profileRef}>
+              <button
+                onClick={() => setShowProfileMenu(!showProfileMenu)}
+                className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center text-white font-semibold shadow-md">
+                  {user.name.charAt(0).toUpperCase()}
+                </div>
+                <div className="hidden md:block text-sm text-left">
+                  <p className="font-medium text-gray-800">{user.name}</p>
+                  <p className="text-gray-500 text-xs">{user.email}</p>
+                </div>
+              </button>
+
+              {/* Profile Dropdown Menu */}
+              {showProfileMenu && (
+                <div className="absolute top-full right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2">
+                  {/* User Info */}
+                  <div className="px-4 py-3 border-b border-gray-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md">
+                        {user.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900">{user.name}</p>
+                        <p className="text-sm text-gray-500">{user.email}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Menu Items */}
+                  <div className="py-2">
+                    <button
+                      onClick={() => {
+                        router.push("/admin/users");
+                        setShowProfileMenu(false);
+                      }}
+                      className="w-full px-4 py-2.5 hover:bg-gray-50 transition-colors text-left flex items-center gap-3"
+                    >
+                      <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <UserIcon size={16} className="text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">Profil Saya</p>
+                        <p className="text-xs text-gray-500">Lihat dan edit profil</p>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        router.push("/admin/settings");
+                        setShowProfileMenu(false);
+                      }}
+                      className="w-full px-4 py-2.5 hover:bg-gray-50 transition-colors text-left flex items-center gap-3"
+                    >
+                      <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                        <Settings size={16} className="text-purple-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">Pengaturan</p>
+                        <p className="text-xs text-gray-500">Atur preferensi akun</p>
+                      </div>
+                    </button>
+                  </div>
+
+                  {/* Logout Button */}
+                  <div className="border-t border-gray-200 pt-2">
+                    <button
+                      onClick={() => {
+                        handleLogout();
+                        setShowProfileMenu(false);
+                      }}
+                      className="w-full px-4 py-2.5 hover:bg-red-50 transition-colors text-left flex items-center gap-3"
+                    >
+                      <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+                        <LogOut size={16} className="text-red-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-red-600">Logout</p>
+                        <p className="text-xs text-gray-500">Keluar dari akun</p>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <>
