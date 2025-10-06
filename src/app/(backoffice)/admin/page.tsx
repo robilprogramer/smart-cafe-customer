@@ -52,6 +52,15 @@ export default function AdminDashboard() {
     };
   }, []);
 
+  // Fungsi untuk handle klik tombol login
+  const handleLoginClick = () => {
+    // Trigger dialog login di Header component
+    const signInButton = document.querySelector('button:has-text("Sign In")') as HTMLButtonElement;
+    if (signInButton) {
+      signInButton.click();
+    }
+  };
+
   const stats = [
     { 
       label: 'Total Pengguna', 
@@ -121,10 +130,11 @@ export default function AdminDashboard() {
     <AdminLayout>
       <div className="space-y-8">
         {/* Header Section */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 text-white shadow-lg">
-          <h2 className="text-3xl font-bold mb-2">Selamat Datang di Dashboard</h2>
-          <p className="text-blue-100 text-lg">Ringkasan aktivitas dan statistik sistem</p>
+        <div className="bg-gradient-to-r from-green-500 to-green-700 rounded-2xl p-8 text-white shadow-lg">
+            <h2 className="text-3xl font-bold mb-2">Selamat Datang di Dashboard</h2>
+            <p className="text-green-100 text-lg">Ringkasan aktivitas dan statistik sistem</p>
         </div>
+
 
         {isLoggedIn ? (
           <>
@@ -296,9 +306,10 @@ export default function AdminDashboard() {
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-bold text-gray-900">Aktivitas Terbaru</h3>
-                <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-                  Lihat Semua
-                </button>
+               <button className="text-sm text-green-600 hover:text-green-700 font-medium">
+                 Lihat Semua
+               </button>
+
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {users.length > 0 ? (
@@ -307,7 +318,8 @@ export default function AdminDashboard() {
                       key={idx} 
                       className="flex items-center gap-4 p-4 rounded-xl border border-gray-100 hover:border-blue-200 hover:bg-blue-50 transition-all group"
                     >
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center flex-shrink-0 shadow-md group-hover:shadow-lg transition-shadow">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
+
                         <span className="text-white font-bold text-lg">
                           {user.name ? user.name[0].toUpperCase() : 'U'}
                         </span>
@@ -341,9 +353,7 @@ export default function AdminDashboard() {
             </div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">Akses Terbatas</h3>
             <p className="text-gray-600 mb-6">Silakan login terlebih dahulu untuk mengakses dashboard</p>
-            <button className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors">
-              Login Sekarang
-            </button>
+           
           </div>
         )}
       </div>

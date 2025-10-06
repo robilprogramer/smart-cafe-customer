@@ -59,7 +59,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const allMenuItems: MenuItem[] = [
     { icon: Home, label: 'Beranda', href: '/admin' },
     { icon: Users, label: 'Pengguna', href: '/admin/users' },
-    { icon: FileText, label: 'Konten', href: '/admin/konten' },
+    { icon: FileText, label: 'Konten', href: '/admin/content' },
     { icon: Package, label: 'Produk', href: '/admin/products' },
     { icon: BarChart3, label: 'Laporan', href: '/admin/laporan' },
     { icon: Mail, label: 'Pesan', href: '/admin/pesan' },
@@ -98,9 +98,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 key={index}
                 href={item.href}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                  isActive
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-300 hover:bg-gray-800'
+                 isActive
+                   ? 'bg-gradient-to-r from-green-500 to-green-700 text-white'
+                   : 'text-gray-300 hover:bg-gray-800'
+
                 }`}
                 onClick={() => window.innerWidth < 1024 && onClose()}
               >

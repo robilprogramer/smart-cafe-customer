@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import LoginForm from "@/components/auth/LoginForm"
-import RegisterForm from "@/components/auth/RegisterForm"
+
 
 interface HeaderProps {
     onToggleSidebar: () => void
@@ -25,15 +25,16 @@ interface HeaderProps {
 
 // Data menu untuk search
 const menuItems = [
-    { label: 'Beranda', href: '/admin', keywords: ['dashboard', 'home', 'beranda', 'utama'] },
-    { label: 'Pengguna', href: '/admin/users', keywords: ['user', 'pengguna', 'member', 'akun'] },
-    { label: 'Konten', href: '/admin/content', keywords: ['content', 'konten', 'artikel', 'post'] },
-    { label: 'Produk', href: '/admin/products', keywords: ['product', 'produk', 'barang', 'item'] },
-    { label: 'Laporan', href: '/admin/laporan', keywords: ['report', 'laporan', 'statistik', 'analytics'] },
-    { label: 'Pesan', href: '/admin/pesan', keywords: ['message', 'pesan', 'chat', 'inbox'] },
-    { label: 'Promo', href: '/admin/promo', keywords: ['promo', 'diskon', 'discount', 'voucher'] },
-    { label: 'Pengaturan', href: '/admin/settings', keywords: ['setting', 'pengaturan', 'konfigurasi', 'config'] },
+  { label: 'Beranda', href: '/admin', description: 'Ringkasan aktivitas & statistik sistem', keywords: ['dashboard', 'home', 'beranda', 'utama'] },
+  { label: 'Pengguna', href: '/admin/users', description: 'Kelola akun dan peran pengguna', keywords: ['user', 'pengguna', 'member', 'akun'] },
+  { label: 'Konten', href: '/admin/content', description: 'Manajemen artikel dan postingan', keywords: ['content', 'konten', 'artikel', 'post'] },
+  { label: 'Produk', href: '/admin/products', description: 'Daftar produk & stok barang', keywords: ['product', 'produk', 'barang', 'item'] },
+  { label: 'Laporan', href: '/admin/laporan', description: 'Statistik & analisis data sistem', keywords: ['report', 'laporan', 'statistik', 'analytics'] },
+  { label: 'Pesan', href: '/admin/pesan', description: 'Kotak masuk & komunikasi pesan', keywords: ['message', 'pesan', 'chat', 'inbox'] },
+  { label: 'Promo', href: '/admin/promo', description: 'Atur promo, diskon & voucher', keywords: ['promo', 'diskon', 'discount', 'voucher'] },
+  { label: 'Pengaturan', href: '/admin/settings', description: 'Konfigurasi & preferensi sistem', keywords: ['setting', 'pengaturan', 'konfigurasi', 'config'] },
 ];
+
 
 export default function Header({ onToggleSidebar, isSidebarOpen }: HeaderProps) {
     const [user, setUser] = useState<User | null>(null)
@@ -134,20 +135,21 @@ export default function Header({ onToggleSidebar, isSidebarOpen }: HeaderProps) 
                                             Hasil Pencarian ({searchResults.length})
                                         </div>
                                         {searchResults.map((item, index) => (
-                                            <button
-                                                key={index}
-                                                onClick={() => handleSearchResultClick(item.href)}
-                                                className="w-full px-4 py-3 hover:bg-gray-50 transition-colors text-left flex items-center gap-3"
-                                            >
-                                                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                                                    <Search size={16} className="text-blue-600" />
-                                                </div>
-                                                <div>
-                                                    <p className="text-sm font-medium text-gray-900">{item.label}</p>
-                                                    <p className="text-xs text-gray-500">{item.href}</p>
-                                                </div>
-                                            </button>
-                                        ))}
+  <button
+    key={index}
+    onClick={() => handleSearchResultClick(item.href)}
+    className="w-full px-4 py-3 hover:bg-gray-50 transition-colors text-left flex items-center gap-3"
+  >
+    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+      <Search size={16} className="text-green-600" />
+    </div>
+    <div>
+      <p className="text-sm font-medium text-gray-900">{item.label}</p>
+      <p className="text-xs text-gray-500">{item.description}</p>
+    </div>
+  </button>
+))}
+
                                     </>
                                 ) : (
                                     <div className="px-4 py-8 text-center">
@@ -167,7 +169,7 @@ export default function Header({ onToggleSidebar, isSidebarOpen }: HeaderProps) 
 
                     {user ? (
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold">
+                            <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
                                 {user.name.charAt(0)}
                             </div>
                             <div className="hidden md:block text-sm">
@@ -178,42 +180,29 @@ export default function Header({ onToggleSidebar, isSidebarOpen }: HeaderProps) 
                     ) : (
                         <>
                             {/* Dialog Login/Register dengan switch */}
-                            <Dialog open={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen}>
-                                <DialogTrigger asChild>
-                                    <Button variant="default">Sign In / Sign Up</Button>
-                                </DialogTrigger>
-                                <DialogContent className="sm:max-w-md rounded-xl shadow-lg">
-                                    <DialogHeader>
-                                        <DialogTitle className="text-xl font-bold text-center">
-                                            {isLoginMode ? "Login ke Dashboard" : "Buat Akun Baru"}
-                                        </DialogTitle>
-                                    </DialogHeader>
+                           <Dialog open={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen}>
+                            <DialogTrigger asChild>
+                            <Button variant="default">Sign In</Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-md rounded-xl shadow-lg">
+                            <DialogHeader>
+                             <DialogTitle className="text-xl font-bold text-center">
+                                Login ke Dashboard
+                            </DialogTitle>
+                            </DialogHeader>
 
-                                    {/* Switch antara Login / Register */}
-                                    <div className="flex justify-center mb-4 gap-2">
-                                        <Button
-                                            variant={isLoginMode ? "default" : "outline"}
-                                            onClick={() => setIsLoginMode(true)}
-                                        >
-                                            Login
-                                        </Button>
-                                        <Button
-                                            variant={!isLoginMode ? "default" : "outline"}
-                                            onClick={() => setIsLoginMode(false)}
-                                        >
-                                            Register
-                                        </Button>
-                                    </div>
+                                  
 
-                                    {/* Form */}
-                                    {isLoginMode ? (
-                                        <LoginForm onLoginSuccess={handleLoginSuccess} />
-                                    ) : (
-                                        <RegisterForm />
-                                    )}
+                                   {/* Form Login saja */}
+    <LoginForm onLoginSuccess={handleLoginSuccess} />
 
-                                    <DialogFooter className="mt-2">
-                                        <Button variant="secondary" onClick={() => setIsAuthDialogOpen(false)}>Tutup</Button>
+                                   <DialogFooter className="mt-2">
+      <Button
+        variant="secondary"
+        onClick={() => setIsAuthDialogOpen(false)}
+      >
+        Tutup
+      </Button>
                                     </DialogFooter>
                                 </DialogContent>
                             </Dialog>
