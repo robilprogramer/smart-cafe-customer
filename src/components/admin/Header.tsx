@@ -1,7 +1,7 @@
 'use client'
 
 import { Menu, X, Bell, Search } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { getCurrentUser, logoutUser, User } from "@/lib/auth"
 import { useRouter } from "next/navigation"
 
@@ -23,14 +23,60 @@ interface HeaderProps {
     isSidebarOpen: boolean
 }
 
+// Data menu untuk search
+const menuItems = [
+    { label: 'Beranda', href: '/admin', keywords: ['dashboard', 'home', 'beranda', 'utama'] },
+    { label: 'Pengguna', href: '/admin/users', keywords: ['user', 'pengguna', 'member', 'akun'] },
+    { label: 'Konten', href: '/admin/konten', keywords: ['content', 'konten', 'artikel', 'post'] },
+    { label: 'Produk', href: '/admin/products', keywords: ['product', 'produk', 'barang', 'item'] },
+    { label: 'Laporan', href: '/admin/laporan', keywords: ['report', 'laporan', 'statistik', 'analytics'] },
+    { label: 'Pesan', href: '/admin/pesan', keywords: ['message', 'pesan', 'chat', 'inbox'] },
+    { label: 'Promo', href: '/admin/promo', keywords: ['promo', 'diskon', 'discount', 'voucher'] },
+    { label: 'Pengaturan', href: '/admin/settings', keywords: ['setting', 'pengaturan', 'konfigurasi', 'config'] },
+];
+
 export default function Header({ onToggleSidebar, isSidebarOpen }: HeaderProps) {
     const [user, setUser] = useState<User | null>(null)
     const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false)
-    const [isLoginMode, setIsLoginMode] = useState(true) // switch antara login & register
+    const [isLoginMode, setIsLoginMode] = useState(true)
+    const [searchQuery, setSearchQuery] = useState('')
+    const [searchResults, setSearchResults] = useState<typeof menuItems>([])
+    const [showSearchResults, setShowSearchResults] = useState(false)
+    const searchRef = useRef<HTMLDivElement>(null)
     const router = useRouter()
 
     useEffect(() => {
         setUser(getCurrentUser())
+    }, [])
+
+    // Handle search
+    useEffect(() => {
+        if (searchQuery.trim() === '') {
+            setSearchResults([])
+            setShowSearchResults(false)
+            return
+        }
+
+        const query = searchQuery.toLowerCase()
+        const filtered = menuItems.filter(item => 
+            item.label.toLowerCase().includes(query) ||
+            item.keywords.some(keyword => keyword.toLowerCase().includes(query))
+        )
+
+        setSearchResults(filtered)
+        setShowSearchResults(true)
+    }, [searchQuery])
+
+    // Close search results when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+                setShowSearchResults(false)
+            }
+        }
+
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => document.removeEventListener('mousedown', handleClickOutside)
     }, [])
 
     const handleLogout = () => {
@@ -42,6 +88,12 @@ export default function Header({ onToggleSidebar, isSidebarOpen }: HeaderProps) 
     const handleLoginSuccess = () => {
         setUser(getCurrentUser())
         setIsAuthDialogOpen(false)
+    }
+
+    const handleSearchResultClick = (href: string) => {
+        router.push(href)
+        setSearchQuery('')
+        setShowSearchResults(false)
     }
 
     return (
@@ -59,13 +111,53 @@ export default function Header({ onToggleSidebar, isSidebarOpen }: HeaderProps) 
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <div className="hidden md:flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2">
-                        <Search size={18} className="text-gray-400" />
-                        <input
-                            type="text"
-                            placeholder="Cari..."
-                            className="bg-transparent border-none outline-none text-sm w-48"
-                        />
+                    {/* Search Box with Results */}
+                    <div className="hidden md:block relative" ref={searchRef}>
+                        <div className="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2">
+                            <Search size={18} className="text-gray-400" />
+                            <input
+                                type="text"
+                                placeholder="Cari menu..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onFocus={() => searchQuery && setShowSearchResults(true)}
+                                className="bg-transparent border-none outline-none text-sm w-48"
+                            />
+                        </div>
+
+                        {/* Search Results Dropdown */}
+                        {showSearchResults && (
+                            <div className="absolute top-full mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 py-2 max-h-80 overflow-y-auto">
+                                {searchResults.length > 0 ? (
+                                    <>
+                                        <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase">
+                                            Hasil Pencarian ({searchResults.length})
+                                        </div>
+                                        {searchResults.map((item, index) => (
+                                            <button
+                                                key={index}
+                                                onClick={() => handleSearchResultClick(item.href)}
+                                                className="w-full px-4 py-3 hover:bg-gray-50 transition-colors text-left flex items-center gap-3"
+                                            >
+                                                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                                                    <Search size={16} className="text-blue-600" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-medium text-gray-900">{item.label}</p>
+                                                    <p className="text-xs text-gray-500">{item.href}</p>
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </>
+                                ) : (
+                                    <div className="px-4 py-8 text-center">
+                                        <Search size={32} className="text-gray-300 mx-auto mb-2" />
+                                        <p className="text-sm text-gray-500">Tidak ada hasil ditemukan</p>
+                                        <p className="text-xs text-gray-400 mt-1">Coba kata kunci lain</p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors relative">
@@ -82,12 +174,6 @@ export default function Header({ onToggleSidebar, isSidebarOpen }: HeaderProps) 
                                 <p className="font-medium text-gray-800">{user.name}</p>
                                 <p className="text-gray-500 text-xs">{user.email}</p>
                             </div>
-                            {/* <button
-                                onClick={handleLogout}
-                                className="px-3 py-1 text-sm rounded-md bg-red-500 text-white hover:bg-red-600"
-                            >
-                                Logout
-                            </button> */}
                         </div>
                     ) : (
                         <>
