@@ -1,8 +1,7 @@
 import { ContentAPI } from "@/services/content.api";
 import { Content } from "@/types/content.types";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
-// ==================== CUSTOM HOOKS ====================
 export const useContents = () => {
   const [contents, setContents] = useState<Content[]>([]);
   const [loading, setLoading] = useState(false);
@@ -12,7 +11,7 @@ export const useContents = () => {
     search: ''
   });
 
-  const fetchContents = async () => {
+  const fetchContents = useCallback(async () => {
     setLoading(true);
     try {
       const response = await ContentAPI.getContents(filters);
@@ -22,11 +21,11 @@ export const useContents = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]); // fetchContents akan dibuat ulang hanya ketika filters berubah
 
   useEffect(() => {
     fetchContents();
-  }, [filters]);
+  }, [fetchContents]); // Sekarang dependency-nya fetchContents
 
   const deleteContent = async (id: string) => {
     await ContentAPI.deleteContent(id);
