@@ -27,7 +27,7 @@ interface HeaderProps {
 const menuItems = [
     { label: 'Beranda', href: '/admin', keywords: ['dashboard', 'home', 'beranda', 'utama'] },
     { label: 'Pengguna', href: '/admin/users', keywords: ['user', 'pengguna', 'member', 'akun'] },
-    { label: 'Konten', href: '/admin/konten', keywords: ['content', 'konten', 'artikel', 'post'] },
+    { label: 'Konten', href: '/admin/content', keywords: ['content', 'konten', 'artikel', 'post'] },
     { label: 'Produk', href: '/admin/products', keywords: ['product', 'produk', 'barang', 'item'] },
     { label: 'Laporan', href: '/admin/laporan', keywords: ['report', 'laporan', 'statistik', 'analytics'] },
     { label: 'Pesan', href: '/admin/pesan', keywords: ['message', 'pesan', 'chat', 'inbox'] },
