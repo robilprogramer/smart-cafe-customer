@@ -22,3 +22,5 @@ export interface PromoState {
   loading: boolean;
   error: string | null;
 }
+
+

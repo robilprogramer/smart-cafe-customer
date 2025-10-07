@@ -10,6 +10,7 @@ import { MenuCard } from "@/components/menu/MenuCard"
 import { MenuDetailModal } from "@/components/menu/MenuDetailModal"
 import { CartSheet } from "@/components/menu/CartSheet"
 import { FlyingItemAnimation } from "@/components/menu/FlyingItemAnimation"
+import { PromoTab } from "@/components/menu/PromoTab"
 
 export default function SmartCafeMenu() {
   const { items, addItem, removeItem, clearCart } = useCartStore()
@@ -19,6 +20,7 @@ export default function SmartCafeMenu() {
   const [flyingItem, setFlyingItem] = useState<FlyingItem | null>(null)
   const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItemWithImages | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState<"menu" | "promo">("menu")
 
   // Get table number from URL
   useEffect(() => {
@@ -51,27 +53,27 @@ export default function SmartCafeMenu() {
     if (event) {
       const button = event.currentTarget
       const rect = button.getBoundingClientRect()
-     
+
       setFlyingItem({
         x: rect.left + rect.width / 2,
         y: rect.top + rect.height / 2,
         name: item.name
       })
     }
-   
+
     addItem(item)
-   
+
     setTimeout(() => {
       setFlyingItem(null)
     }, 800)
   }
-  
+
   // Handle open menu detail
   const handleMenuClick = (item: MenuItemWithImages) => {
     setSelectedMenuItem(item)
     setIsModalOpen(true)
   }
-  
+
   // Handle close modal
   const handleCloseModal = () => {
     setIsModalOpen(false)
@@ -82,9 +84,9 @@ export default function SmartCafeMenu() {
     <div className="min-h-screen bg-green-50 relative">
       {/* Flying Item Animation */}
       <FlyingItemAnimation flyingItem={flyingItem} />
-     
+
       {/* Header with Cart */}
-      <MenuHeader 
+      <MenuHeader
         tableNumber={tableNumber}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -103,34 +105,62 @@ export default function SmartCafeMenu() {
 
       <div className="max-w-6xl mx-auto px-6 py-6">
         {/* Quick Info Banner */}
-        <QuickInfoBanner 
-          totalMenuItems={menuData.length}
-          tableNumber={tableNumber}
-        />
+        <QuickInfoBanner totalMenuItems={menuData.length} tableNumber={tableNumber} />
 
-        {/* Category Tabs */}
-        <CategoryTabs
-          categories={categories}
-          selectedCategory={selectedCategory}
-          onSelectCategory={setSelectedCategory}
-        />
-
-        {/* Menu Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {filteredMenu.map((item, index) => (
-            <MenuCard
-              key={item.id}
-              item={item}
-              index={index}
-              onMenuClick={handleMenuClick}
-              onQuickAdd={handleAddToCart}
-            />
-          ))}
+        {/* Tab Switcher */}
+        <div className="flex gap-2 mb-6 bg-white rounded-xl p-2 shadow-sm">
+          <button
+            onClick={() => setActiveTab("menu")}
+            className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all ${
+              activeTab === "menu"
+                ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-md"
+                : "text-gray-600 hover:bg-gray-50"
+            }`}
+          >
+            🍽️ Menu
+          </button>
+          <button
+            onClick={() => setActiveTab("promo")}
+            className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all ${
+              activeTab === "promo"
+                ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-md"
+                : "text-gray-600 hover:bg-gray-50"
+            }`}
+          >
+            🎉 Promo
+          </button>
         </div>
+
+        {/* Content berdasarkan tab aktif */}
+        {activeTab === "menu" ? (
+          <>
+            {/* Category Tabs */}
+            <CategoryTabs
+              categories={categories}
+              selectedCategory={selectedCategory}
+              onSelectCategory={setSelectedCategory}
+            />
+
+            {/* Menu Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {filteredMenu.map((item, index) => (
+                <MenuCard
+                  key={item.id}
+                  item={item}
+                  index={index}
+                  onMenuClick={handleMenuClick}
+                  onQuickAdd={handleAddToCart}
+                />
+              ))}
+            </div>
+          </>
+        ) : (
+          <PromoTab />
+        )}
       </div>
-      
+
       {/* Menu Detail Modal */}
-      <MenuDetailModal 
+      <MenuDetailModal
         item={selectedMenuItem}
         isOpen={isModalOpen}
         onClose={handleCloseModal}
