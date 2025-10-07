@@ -1,5 +1,5 @@
 "use client"
-import React from "react"
+import React, { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { ShoppingCart, Plus } from "lucide-react"
 import { formatRupiah } from "@/lib/formatCurrency"
@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/sheet"
 import { useRouter } from "next/navigation"
 import { CartItem } from "@/store/cart"
+import { PromoInput } from "./PromoInput"
+import { Promo } from "@/components/admin/promo/types"
 
 interface CartSheetProps {
   items: CartItem[]
@@ -33,6 +35,20 @@ export function CartSheet({
   onClearCart 
 }: CartSheetProps) {
   const router = useRouter()
+  const [appliedPromo, setAppliedPromo] = useState<Promo | null>(null)
+  const [discountAmount, setDiscountAmount] = useState(0)
+
+  const handleApplyPromo = (promo: Promo, discount: number) => {
+    setAppliedPromo(promo)
+    setDiscountAmount(discount)
+  }
+
+  const handleRemovePromo = () => {
+    setAppliedPromo(null)
+    setDiscountAmount(0)
+  }
+
+  const finalTotal = total - discountAmount
   
   return (
     <Sheet>
@@ -123,15 +139,36 @@ export function CartSheet({
        
         {items.length > 0 && (
           <div className="p-4 border-t border-gray-200 space-y-4 mt-auto">
+            {/* Promo Input - TAMBAHAN BARU */}
+            <PromoInput
+              onApplyPromo={handleApplyPromo}
+              onRemovePromo={handleRemovePromo}
+              appliedPromo={appliedPromo}
+              subtotal={total}
+            />
+
             <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-gray-600">Jumlah Item</span>
                 <span className="font-semibold text-gray-800">{totalItems} item</span>
               </div>
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-gray-600">Subtotal</span>
+                <span className="font-semibold text-gray-800">Rp {formatRupiah(total)}</span>
+              </div>
+              
+              {/* Tampilkan diskon jika ada promo - TAMBAHAN BARU */}
+              {appliedPromo && discountAmount > 0 && (
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-green-600 font-medium">Diskon ({appliedPromo.diskon})</span>
+                  <span className="font-semibold text-green-600">-Rp {formatRupiah(discountAmount)}</span>
+                </div>
+              )}
+
+              <div className="flex justify-between items-center pt-2 border-t border-green-200">
                 <span className="text-lg font-bold text-gray-800">Total Pembayaran</span>
                 <span className="text-2xl font-bold text-green-600">
-                  Rp {formatRupiah(total)}
+                  Rp {formatRupiah(finalTotal)}
                 </span>
               </div>
             </div>

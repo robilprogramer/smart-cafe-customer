@@ -16,7 +16,7 @@ const PromoPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Initial data (seperti di screenshot Anda)
+  // Initial data dengan 11 promo untuk testing pagination
   const initialPromos: Promo[] = [
     {
       id: 1,
@@ -41,6 +41,70 @@ const PromoPage: React.FC = () => {
       diskon: "-25%",
       berlaku: "1 - 31 Oktober 2025",
       kode: "FAMILY25"
+    },
+    {
+      id: 4,
+      judul: "Diskon Weekend",
+      deskripsi: "Khusus Sabtu-Minggu, dapatkan diskon 20% untuk semua menu.",
+      diskon: "-20%",
+      berlaku: "4 - 26 Oktober 2025",
+      kode: "WEEKEND20"
+    },
+    {
+      id: 5,
+      judul: "Promo Lunch Time",
+      deskripsi: "Diskon 15% untuk pembelian pada jam makan siang 11:00-14:00.",
+      diskon: "-15%",
+      berlaku: "1 - 30 Oktober 2025",
+      kode: "LUNCH15"
+    },
+    {
+      id: 6,
+      judul: "Buy 1 Get 1 Free",
+      deskripsi: "Beli 1 minuman ukuran besar, gratis 1 minuman ukuran regular.",
+      diskon: "-50%",
+      berlaku: "10 - 25 Oktober 2025",
+      kode: "BUY1GET1"
+    },
+    {
+      id: 7,
+      judul: "Member Special",
+      deskripsi: "Khusus member, dapatkan cashback 10% setiap transaksi.",
+      diskon: "-10%",
+      berlaku: "1 - 31 Oktober 2025",
+      kode: "MEMBER10"
+    },
+    {
+      id: 8,
+      judul: "Paket Ulang Tahun",
+      deskripsi: "Rayakan ulang tahun dengan diskon 35% untuk paket party.",
+      diskon: "-35%",
+      berlaku: "1 - 31 Oktober 2025",
+      kode: "BDAY35"
+    },
+    {
+      id: 9,
+      judul: "Promo Ramadan",
+      deskripsi: "Diskon spesial 40% untuk paket buka puasa.",
+      diskon: "-40%",
+      berlaku: "1 - 30 Oktober 2025",
+      kode: "RAMADAN40"
+    },
+    {
+      id: 10,
+      judul: "Student Discount",
+      deskripsi: "Tunjukkan kartu pelajar/mahasiswa dan dapatkan diskon 15%.",
+      diskon: "-15%",
+      berlaku: "1 - 31 Oktober 2025",
+      kode: "STUDENT15"
+    },
+    {
+      id: 11,
+      judul: "Early Bird Special",
+      deskripsi: "Datang sebelum jam 10 pagi dan dapatkan diskon 25%.",
+      diskon: "-25%",
+      berlaku: "1 - 31 Oktober 2025",
+      kode: "EARLYBIRD25"
     }
   ];
 
