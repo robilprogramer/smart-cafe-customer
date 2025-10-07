@@ -1,5 +1,7 @@
 import { create } from "zustand"
 
+
+
 export type MenuItem = {
   id: number
   name: string
@@ -8,7 +10,8 @@ export type MenuItem = {
   category: "Makanan" | "Minuman" | "Lainnya"
 }
 
-type CartItem = MenuItem & { qty: number }
+
+export type CartItem = MenuItem & { qty: number }
 
 type CartState = {
   items: CartItem[]

@@ -1,12 +1,9 @@
-// FILE: LoginForm.tsx
-"use client";
-
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import toast from "react-hot-toast";
 
-// 💡 Tambahkan interface untuk props (termasuk callback)
 interface LoginFormProps {
     onLoginSuccess?: () => void;
 }
@@ -18,7 +15,6 @@ interface User {
     role: string;
 }
 
-// 💡 Terima props di komponen
 export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -26,31 +22,24 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
 
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
-
         const storedUsers = localStorage.getItem("users");
         const users: User[] = storedUsers ? JSON.parse(storedUsers) : [];
 
-        const user = users.find(
-            (u) => u.email === email && u.password === password
-        );
+        const user = users.find(u => u.email === email && u.password === password);
 
         if (!user) {
-            alert("Email atau password salah!");
+            toast.error("Email atau password salah!");
             return;
         }
 
         localStorage.setItem("currentUser", JSON.stringify(user));
 
-        alert(`Selamat datang, ${user.name}!`);
+        toast.success(`Selamat datang, ${user.name}!`); // <-- switch alert
 
-        // 💡 Panggil callback untuk menutup modal di Header
-        onLoginSuccess && onLoginSuccess(); 
+        onLoginSuccess && onLoginSuccess();
 
-        // ✅ Redirect berdasarkan role
-        if (user.role === "admin") {
-            router.push("/admin"); 
-        } else if (user.role === "superadmin") {
-            router.push("/admin"); 
+        if (user.role === "admin" || user.role === "superadmin") {
+            router.push("/admin");
         } else {
             router.push("/");
         }
@@ -75,9 +64,7 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
                 onChange={(e) => setPassword(e.target.value)}
                 required
             />
-            <Button type="submit" className="w-full">
-                Masuk
-            </Button>
+            <Button type="submit" className="w-full">Masuk</Button>
         </form>
     );
 }

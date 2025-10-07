@@ -1,139 +1,308 @@
-"use client"
+"use client";
 
-import { Menu, X, Bell, Search } from "lucide-react"
-import { useState, useEffect } from "react"
-import { getCurrentUser, logoutUser, User } from "@/lib/auth"
-import { useRouter } from "next/navigation"
+import { Menu, X, Bell, Search, LogOut, Settings, User as UserIcon } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { getCurrentUser, logoutUser, User } from "@/lib/auth";
+import { useRouter } from "next/navigation";
 
 // Shadcn Dialog
 import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog"
-
-import LoginForm from "@/components/auth/LoginForm" // Ganti jalur sesuai lokasi aslinya
-import RegisterForm from "@/components/auth/RegisterForm" // Ganti jalur sesuai lokasi aslinya
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import LoginForm from "@/components/auth/LoginForm";
+import RegisterForm from "@/components/auth/RegisterForm";
 
 interface HeaderProps {
-    onToggleSidebar: () => void
-    isSidebarOpen: boolean
+  onToggleSidebar: () => void;
+  isSidebarOpen: boolean;
 }
 
+// Data menu untuk search
+const menuItems = [
+  { label: "Beranda", href: "/admin", description: "Ringkasan aktivitas & statistik sistem", keywords: ["dashboard", "home", "beranda", "utama"] },
+  { label: "Pengguna", href: "/admin/users", description: "Kelola akun dan peran pengguna", keywords: ["user", "pengguna", "member", "akun"] },
+  { label: "Konten", href: "/admin/content", description: "Manajemen artikel dan postingan", keywords: ["content", "konten", "artikel", "post"] },
+  { label: "Produk", href: "/admin/products", description: "Daftar produk & stok barang", keywords: ["product", "produk", "barang", "item"] },
+  { label: "Laporan", href: "/admin/laporan", description: "Statistik & analisis data sistem", keywords: ["report", "laporan", "statistik", "analytics"] },
+  { label: "Pesan", href: "/admin/pesan", description: "Kotak masuk & komunikasi pesan", keywords: ["message", "pesan", "chat", "inbox"] },
+  { label: "Promo", href: "/admin/promo", description: "Atur promo, diskon & voucher", keywords: ["promo", "diskon", "discount", "voucher"] },
+  { label: "Pengaturan", href: "/admin/settings", description: "Konfigurasi & preferensi sistem", keywords: ["setting", "pengaturan", "konfigurasi", "config"] },
+];
+
 export default function Header({ onToggleSidebar, isSidebarOpen }: HeaderProps) {
-    const [user, setUser] = useState<User | null>(null)
-    // 💡 1. Tambahkan state untuk mengontrol modal login
-    const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
-    const router = useRouter()
+  const [user, setUser] = useState<User | null>(null);
+  const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
+  const [isLoginMode, setIsLoginMode] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<typeof menuItems>([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
-    useEffect(() => {
-        setUser(getCurrentUser())
-    }, [])
+  useEffect(() => {
+    setUser(getCurrentUser());
+  }, []);
 
-    const handleLogout = () => {
-        logoutUser()
-        setUser(null)
-        // ✅ Logout diarahkan ke /admin
-        router.push("/admin")
+  // Handle search
+  useEffect(() => {
+    if (searchQuery.trim() === "") {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      return;
     }
 
-    // 💡 2. Tambahkan fungsi callback untuk dipanggil dari LoginForm
-    const handleLoginSuccess = () => {
-        // Memperbarui user state agar Header menampilkan profil
-        setUser(getCurrentUser()); 
-        // Menutup modal login
-        setIsLoginModalOpen(false); 
+    const query = searchQuery.toLowerCase();
+    const filtered = menuItems.filter(
+      (item) =>
+        item.label.toLowerCase().includes(query) ||
+        item.keywords.some((keyword) => keyword.toLowerCase().includes(query))
+    );
+
+    setSearchResults(filtered);
+    setShowSearchResults(true);
+  }, [searchQuery]);
+
+  // Close search results and profile menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSearchResults(false);
+      }
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setShowProfileMenu(false);
+      }
     };
 
-    return (
-        <header className="bg-white shadow-md fixed top-0 left-0 right-0 z-30 h-16">
-            <div className="flex items-center justify-between h-full px-4">
-                {/* Sidebar Toggle */}
-                <div className="flex items-center gap-4">
-                    <button
-                        onClick={onToggleSidebar}
-                        className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                        aria-label="Toggle Sidebar"
-                    >
-                        {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
-                    </button>
-                    <h1 className="text-xl font-bold text-gray-800">Admin Dashboard</h1>
-                </div>
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
-                {/* Right Side */}
-                <div className="flex items-center gap-4">
-                    {/* Search */}
-                    <div className="hidden md:flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2">
-                        <Search size={18} className="text-gray-400" />
-                        <input
-                            type="text"
-                            placeholder="Cari..."
-                            className="bg-transparent border-none outline-none text-sm w-48"
-                        />
-                    </div>
+  const handleLogout = () => {
+    logoutUser();
+    setUser(null);
+    router.push("/admin");
+  };
 
-                    {/* Notification */}
-                    <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors relative">
-                        <Bell size={20} className="text-gray-600" />
-                        <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                    </button>
+  const handleLoginSuccess = () => {
+    setUser(getCurrentUser());
+    setIsAuthDialogOpen(false);
+  };
 
-                    {/* User Profile / Auth */}
-                    {user ? (
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold">
-                                {user.name.charAt(0)}
-                            </div>
-                            <div className="hidden md:block text-sm">
-                                <p className="font-medium text-gray-800">{user.name}</p>
-                                <p className="text-gray-500 text-xs">{user.email}</p>
-                            </div>
-                            <button
-                                onClick={handleLogout}
-                                className="px-3 py-1 text-sm rounded-md bg-red-500 text-white hover:bg-red-600"
-                            >
-                                Logout
-                            </button>
-                        </div>
-                    ) : (
-                        <div className="flex gap-2">
-                            {/* Sign In Modal */}
-                            {/* 💡 Gunakan 'open' dan 'onOpenChange' untuk mengontrol state modal */}
-                            <Dialog open={isLoginModalOpen} onOpenChange={setIsLoginModalOpen}>
-                                <DialogTrigger asChild>
-                                    <button className="px-3 py-1 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700">
-                                        Sign In
-                                    </button>
-                                </DialogTrigger>
-                                <DialogContent className="sm:max-w-md rounded-xl shadow-lg">
-                                    <DialogHeader>
-                                        <DialogTitle className="text-xl font-bold text-center">Login ke Dashboard</DialogTitle>
-                                    </DialogHeader>
-                                    {/* 💡 Teruskan callback ke LoginForm */}
-                                    <LoginForm onLoginSuccess={handleLoginSuccess} />
-                                </DialogContent>
-                            </Dialog>
+  const handleSearchResultClick = (href: string) => {
+    router.push(href);
+    setSearchQuery("");
+    setShowSearchResults(false);
+  };
 
-                            {/* Sign Up Modal */}
-                            <Dialog>
-                                <DialogTrigger asChild>
-                                    <button className="px-3 py-1 text-sm rounded-md bg-gray-200 text-gray-800 hover:bg-gray-300">
-                                        Sign Up
-                                    </button>
-                                </DialogTrigger>
-                                <DialogContent className="sm:max-w-md rounded-xl shadow-lg">
-                                    <DialogHeader>
-                                        <DialogTitle className="text-xl font-bold text-center">Buat Akun Baru</DialogTitle>
-                                    </DialogHeader>
-                                    <RegisterForm />
-                                </DialogContent>
-                            </Dialog>
-                        </div>
-                    )}
-                </div>
+  return (
+    <header className="bg-white shadow-md fixed top-0 left-0 right-0 z-30 h-16">
+      <div className="flex items-center justify-between h-full px-4">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={onToggleSidebar}
+            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            aria-label="Toggle Sidebar"
+          >
+            {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+          <h1 className="text-xl font-bold text-gray-800">Admin Dashboard</h1>
+        </div>
+
+        <div className="flex items-center gap-4">
+          {/* Search Box with Results */}
+          <div className="hidden md:block relative" ref={searchRef}>
+            <div className="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2">
+              <Search size={18} className="text-gray-400" />
+              <input
+                type="text"
+                placeholder="Cari menu..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => searchQuery && setShowSearchResults(true)}
+                className="bg-transparent border-none outline-none text-sm w-48"
+              />
             </div>
-        </header>
-    )
+
+            {/* Search Results Dropdown */}
+            {showSearchResults && (
+              <div className="absolute top-full mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 py-2 max-h-80 overflow-y-auto">
+                {searchResults.length > 0 ? (
+                  <>
+                    <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase">
+                      Hasil Pencarian ({searchResults.length})
+                    </div>
+                    {searchResults.map((item, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleSearchResultClick(item.href)}
+                        className="w-full px-4 py-3 hover:bg-gray-50 transition-colors text-left flex items-center gap-3"
+                      >
+                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                          <Search size={16} className="text-green-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{item.label}</p>
+                          <p className="text-xs text-gray-500">{item.description}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </>
+                ) : (
+                  <div className="px-4 py-8 text-center">
+                    <Search size={32} className="text-gray-300 mx-auto mb-2" />
+                    <p className="text-sm text-gray-500">Tidak ada hasil ditemukan</p>
+                    <p className="text-xs text-gray-400 mt-1">Coba kata kunci lain</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors relative">
+            <Bell size={20} className="text-gray-600" />
+            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+          </button>
+
+          {user ? (
+            <div className="relative" ref={profileRef}>
+              <button
+                onClick={() => setShowProfileMenu(!showProfileMenu)}
+                className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center text-white font-semibold shadow-md">
+                  {user.name.charAt(0).toUpperCase()}
+                </div>
+                <div className="hidden md:block text-sm text-left">
+                  <p className="font-medium text-gray-800">{user.name}</p>
+                  <p className="text-gray-500 text-xs">{user.email}</p>
+                </div>
+              </button>
+
+              {/* Profile Dropdown Menu */}
+              {showProfileMenu && (
+                <div className="absolute top-full right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2">
+                  {/* User Info */}
+                  <div className="px-4 py-3 border-b border-gray-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md">
+                        {user.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900">{user.name}</p>
+                        <p className="text-sm text-gray-500">{user.email}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Menu Items */}
+                  <div className="py-2">
+                    <button
+                      onClick={() => {
+                        router.push("/admin/users");
+                        setShowProfileMenu(false);
+                      }}
+                      className="w-full px-4 py-2.5 hover:bg-gray-50 transition-colors text-left flex items-center gap-3"
+                    >
+                      <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <UserIcon size={16} className="text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">Profil Saya</p>
+                        <p className="text-xs text-gray-500">Lihat dan edit profil</p>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        router.push("/admin/settings");
+                        setShowProfileMenu(false);
+                      }}
+                      className="w-full px-4 py-2.5 hover:bg-gray-50 transition-colors text-left flex items-center gap-3"
+                    >
+                      <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                        <Settings size={16} className="text-purple-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">Pengaturan</p>
+                        <p className="text-xs text-gray-500">Atur preferensi akun</p>
+                      </div>
+                    </button>
+                  </div>
+
+                  {/* Logout Button */}
+                  <div className="border-t border-gray-200 pt-2">
+                    <button
+                      onClick={() => {
+                        handleLogout();
+                        setShowProfileMenu(false);
+                      }}
+                      className="w-full px-4 py-2.5 hover:bg-red-50 transition-colors text-left flex items-center gap-3"
+                    >
+                      <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+                        <LogOut size={16} className="text-red-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-red-600">Logout</p>
+                        <p className="text-xs text-gray-500">Keluar dari akun</p>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              {/* Dialog Login/Register */}
+              <Dialog open={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="default">
+                    {isLoginMode ? "Sign In" : "Register"}
+                  </Button>
+                </DialogTrigger>
+
+                <DialogContent className="sm:max-w-md rounded-xl shadow-lg">
+                  <DialogHeader>
+                    <DialogTitle className="text-xl font-bold text-center">
+                      {isLoginMode ? "Login ke Dashboard" : "Buat Akun Baru"}
+                    </DialogTitle>
+                  </DialogHeader>
+
+                  {isLoginMode ? (
+                    <LoginForm onLoginSuccess={handleLoginSuccess} />
+                  ) : (
+                    <RegisterForm />
+                  )}
+
+                  <DialogFooter className="flex flex-col gap-2 mt-4">
+                    <Button
+                      variant="secondary"
+                      onClick={() => setIsLoginMode(!isLoginMode)}
+                    >
+                      {isLoginMode
+                        ? "Belum punya akun? Daftar"
+                        : "Sudah punya akun? Login"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsAuthDialogOpen(false)}
+                    >
+                      Tutup
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </>
+          )}
+        </div>
+      </div>
+    </header>
+  );
 }
