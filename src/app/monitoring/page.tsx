@@ -10,7 +10,6 @@ import {
   CheckCircle,
   Package,
   Coffee,
-  LucideIcon,
   MessageCircle,
   Send,
 } from "lucide-react";
@@ -35,38 +34,40 @@ interface OrderData {
   estimatedTime: string;
   orderDate: string;
   pickupType: string;
+  customerId: string;
+  tableId: string;
+  paymentMethod: string;
 }
 
 interface StatusStep {
   id: "confirmed" | "preparing" | "ready" | "completed";
   label: string;
-  icon: LucideIcon;
+  icon: any;
   color: string;
   desc: string;
 }
 
+// Emoji mapping untuk item
+const getItemEmoji = (itemName: string): string => {
+  const name = itemName.toLowerCase();
+  if (name.includes("coffee") || name.includes("cappuccino") || name.includes("latte") || name.includes("espresso")) return "☕";
+  if (name.includes("croissant") || name.includes("roti")) return "🥐";
+  if (name.includes("cake") || name.includes("kue")) return "🍰";
+  if (name.includes("sandwich")) return "🥪";
+  if (name.includes("tea") || name.includes("teh")) return "🍵";
+  if (name.includes("juice") || name.includes("jus")) return "🧃";
+  if (name.includes("donut")) return "🍩";
+  if (name.includes("cookie")) return "🍪";
+  return "🍽️";
+};
+
 export default function CafeOrderMonitoring() {
   const [orderStatus, setOrderStatus] = useState<StatusStep["id"]>("confirmed");
-
-  const [orderData] = useState<OrderData>({
-    orderId: "CAFE-2024-0152",
-    customerName: "Budi Santoso",
-    phone: "081234567890",
-    cafeName: "Kafe Nusantara",
-    items: [
-      { name: "Cappuccino", qty: 2, price: 32000, image: "☕" },
-      { name: "Caffe Latte", qty: 1, price: 35000, image: "☕" },
-      { name: "Croissant", qty: 2, price: 28000, image: "🥐" },
-      { name: "Cheesecake", qty: 1, price: 35000, image: "🍰" },
-    ],
-    address: "Jl. Sudirman No. 45, Jakarta Pusat",
-    totalPrice: 162000,
-    tax: 16200,
-    orderTime: "14:30",
-    estimatedTime: "14:50",
-    orderDate: "29 Sep 2024",
-    pickupType: "Ambil di Tempat",
-  });
+  const [orderData, setOrderData] = useState<OrderData | null>(null);
+  const [showChat, setShowChat] = useState(false);
+  const [chatMessages, setChatMessages] = useState<string[]>([]);
+  const [chatInput, setChatInput] = useState("");
+  const [loading, setLoading] = useState(true);
 
   const statusSteps: StatusStep[] = [
     {
@@ -99,18 +100,118 @@ export default function CafeOrderMonitoring() {
     },
   ];
 
+  // Load data dari localStorage saat component mount
+  useEffect(() => {
+    const loadOrderData = () => {
+      try {
+        // Ambil data cart dari cart-storage (sama seperti di pembayaran)
+        const cartStorage = window.localStorage.getItem("cart-storage");
+        const cartItems = cartStorage ? JSON.parse(cartStorage) : [];
+        
+        // Ambil history untuk info customer
+        const history = JSON.parse(window.localStorage.getItem("history") || "[]");
+        
+        if (cartItems.length === 0 && history.length === 0) {
+          // Jika tidak ada data sama sekali
+          setOrderData(null);
+          setLoading(false);
+          return;
+        }
+
+        // Jika ada cart items, gunakan cart sebagai sumber data pesanan
+        let orderItems: OrderItem[] = [];
+        
+        if (cartItems.length > 0) {
+          // Ambil dari cart (data terbaru)
+          orderItems = cartItems.map((item: any) => ({
+            name: item.name,
+            qty: item.qty,
+            price: item.price,
+            image: getItemEmoji(item.name),
+          }));
+        } else if (history.length > 0) {
+          // Fallback: ambil dari history jika cart kosong
+          orderItems = history.reduce((acc: OrderItem[], item: any) => {
+            const existing = acc.find((i: OrderItem) => i.name === item.name);
+            if (existing) {
+              existing.qty += item.qty;
+            } else {
+              acc.push({
+                name: item.name,
+                qty: item.qty,
+                price: item.price,
+                image: getItemEmoji(item.name),
+              });
+            }
+            return acc;
+          }, [] as OrderItem[]);
+        }
+
+        // Hitung total dari order items
+        const subtotal = orderItems.reduce((sum: number, item: OrderItem) => sum + item.price * item.qty, 0);
+        const tax = Math.round(subtotal * 0.1);
+
+        // Ambil info customer dari history terakhir (jika ada)
+        const lastOrder = history.length > 0 ? history[history.length - 1] : null;
+        
+        // Parse tanggal
+        const now = new Date();
+        const orderTime = now.toLocaleTimeString("id-ID", { 
+          hour: "2-digit", 
+          minute: "2-digit" 
+        });
+        const estimatedDateTime = new Date(now.getTime() + 20 * 60000);
+        const estimatedTime = estimatedDateTime.toLocaleTimeString("id-ID", { 
+          hour: "2-digit", 
+          minute: "2-digit" 
+        });
+        const orderDate = now.toLocaleDateString("id-ID", { 
+          day: "2-digit", 
+          month: "short", 
+          year: "numeric" 
+        });
+
+        setOrderData({
+          orderId: lastOrder?.customerId?.replace("CUST", "ORD") || "ORD-" + Date.now().toString().slice(-5),
+          customerName: lastOrder?.customerName || "Customer",
+          phone: lastOrder?.customerPhone || lastOrder?.phone || "08xxxxxxxxxx",
+          customerId: lastOrder?.customerId || "CUST-" + Date.now().toString().slice(-5),
+          tableId: lastOrder?.tableId || "MEJA-08",
+          cafeName: "Kafe Nusantara",
+          items: orderItems,
+          address: "Jl. Sudirman No. 45, Jakarta Pusat",
+          totalPrice: subtotal,
+          tax: tax,
+          orderTime: orderTime,
+          estimatedTime: estimatedTime,
+          orderDate: orderDate,
+          pickupType: "Ambil di Tempat",
+          paymentMethod: lastOrder?.metode || "Sedang Memproses",
+        });
+        
+        setLoading(false);
+      } catch (error) {
+        console.error("Error loading order data:", error);
+        setOrderData(null);
+        setLoading(false);
+      }
+    };
+
+    loadOrderData();
+    
+    // Refresh data setiap 2 detik untuk sinkronisasi real-time
+    const interval = setInterval(loadOrderData, 2000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
   const getCurrentStepIndex = () =>
     statusSteps.findIndex((step) => step.id === orderStatus);
 
   const getCurrentStep = () =>
     statusSteps.find((step) => step.id === orderStatus);
 
-  const totalAmount = orderData.totalPrice + orderData.tax;
-
-  // 👉 Chat bot
-  const [showChat, setShowChat] = useState(false);
-  const [chatMessages, setChatMessages] = useState<string[]>([]);
-  const [chatInput, setChatInput] = useState("");
+  const totalAmount = orderData ? orderData.totalPrice + orderData.tax : 0;
 
   const handleSendMessage = () => {
     if (!chatInput.trim()) return;
@@ -126,7 +227,7 @@ export default function CafeOrderMonitoring() {
     }, 1000);
   };
 
-  // 👉 Status otomatis (berhenti di completed)
+  // Status otomatis (berhenti di completed)
   useEffect(() => {
     if (orderStatus === "completed") return;
 
@@ -140,6 +241,37 @@ export default function CafeOrderMonitoring() {
 
     return () => clearInterval(interval);
   }, [orderStatus]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 flex items-center justify-center">
+        <div className="text-center">
+          <Coffee className="w-16 h-16 text-green-600 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600 font-semibold">Memuat data pesanan...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!orderData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 flex items-center justify-center p-4">
+        <div className="text-center bg-white rounded-3xl shadow-xl p-8 max-w-md">
+          <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Coffee className="w-10 h-10 text-amber-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Belum Ada Pesanan</h2>
+          <p className="text-gray-600 mb-6">Silakan buat pesanan terlebih dahulu untuk melakukan monitoring</p>
+          <a
+            href="/menu"
+            className="inline-block bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 px-6 rounded-xl font-bold shadow-lg hover:scale-105 transition-all"
+          >
+            Buat Pesanan Baru
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
@@ -280,6 +412,14 @@ export default function CafeOrderMonitoring() {
                 </span>
               </div>
             </div>
+
+            {/* Info Metode Pembayaran */}
+            <div className="mt-4 pt-4 border-t border-amber-100">
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-3 border border-green-200">
+                <p className="text-sm text-gray-600 mb-1">Metode Pembayaran</p>
+                <p className="font-bold text-green-700 text-lg">{orderData.paymentMethod}</p>
+              </div>
+            </div>
           </div>
 
           {/* Info Pengambilan */}
@@ -306,13 +446,25 @@ export default function CafeOrderMonitoring() {
               </div>
 
               <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-4 border border-green-200">
-                <p className="text-sm text-gray-600 mb-1">Nama Pemesan</p>
-                <p className="font-bold text-gray-800 mb-2">
-                  {orderData.customerName}
-                </p>
-                <div className="flex items-center space-x-2">
-                  <Phone className="w-4 h-4 text-gray-500" />
-                  <p className="text-sm text-gray-600">{orderData.phone}</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Customer ID</p>
+                    <p className="font-bold text-gray-800">{orderData.customerId}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Meja</p>
+                    <p className="font-bold text-gray-800">{orderData.tableId}</p>
+                  </div>
+                </div>
+                <div className="mt-3 pt-3 border-t border-green-200">
+                  <p className="text-sm text-gray-600 mb-1">Nama Pemesan</p>
+                  <p className="font-bold text-gray-800 mb-2">
+                    {orderData.customerName}
+                  </p>
+                  <div className="flex items-center space-x-2">
+                    <Phone className="w-4 h-4 text-gray-500" />
+                    <p className="text-sm text-gray-600">{orderData.phone}</p>
+                  </div>
                 </div>
               </div>
             </div>
