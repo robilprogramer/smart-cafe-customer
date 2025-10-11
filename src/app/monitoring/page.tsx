@@ -1,4 +1,4 @@
-"use client";
+'use client'
 
 import React, { useState, useEffect } from "react";
 import {
@@ -65,9 +65,10 @@ export default function CafeOrderMonitoring() {
   const [orderStatus, setOrderStatus] = useState<StatusStep["id"]>("confirmed");
   const [orderData, setOrderData] = useState<OrderData | null>(null);
   const [showChat, setShowChat] = useState(false);
-  const [chatMessages, setChatMessages] = useState<string[]>([]);
+  const [chatMessages, setChatMessages] = useState<Array<{role: 'user' | 'assistant', content: string}>>([]);
   const [chatInput, setChatInput] = useState("");
   const [loading, setLoading] = useState(true);
+  const [chatLoading, setChatLoading] = useState(false);
 
   const statusSteps: StatusStep[] = [
     {
@@ -213,18 +214,88 @@ export default function CafeOrderMonitoring() {
 
   const totalAmount = orderData ? orderData.totalPrice + orderData.tax : 0;
 
-  const handleSendMessage = () => {
-    if (!chatInput.trim()) return;
-    const newMessages = [...chatMessages, `👤 ${chatInput}`];
-    setChatMessages(newMessages);
+  const handleSendMessage = async () => {
+    if (!chatInput.trim() || chatLoading) return;
+    
+    const userMessage = chatInput.trim();
     setChatInput("");
+    
+    // Tambah pesan user
+    setChatMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+    setChatLoading(true);
 
-    setTimeout(() => {
-      setChatMessages((prev) => [
-        ...prev,
-        "🤖 Terima kasih, pesan Anda sudah kami terima!",
-      ]);
-    }, 1000);
+    try {
+      // Buat konteks pesanan untuk AI
+      const orderContext = `
+Konteks Pesanan Pelanggan:
+- Order ID: ${orderData?.orderId}
+- Customer: ${orderData?.customerName}
+- Status Pesanan: ${getCurrentStep()?.label} - ${getCurrentStep()?.desc}
+- Menu yang Dipesan: ${orderData?.items.map(item => `${item.name} (${item.qty}x @ Rp ${item.price.toLocaleString('id-ID')})`).join(', ')}
+- Total Pembayaran: Rp ${totalAmount.toLocaleString('id-ID')} (termasuk pajak 10%)
+- Metode Pembayaran: ${orderData?.paymentMethod}
+- Waktu Pemesanan: ${orderData?.orderTime}
+- Estimasi Siap: ${orderData?.estimatedTime}
+- Tanggal: ${orderData?.orderDate}
+- Lokasi Kafe: ${orderData?.cafeName}, ${orderData?.address}
+- Nomor Telepon: ${orderData?.phone}
+- Customer ID: ${orderData?.customerId}
+- Nomor Meja: ${orderData?.tableId}
+- Tipe Pesanan: ${orderData?.pickupType}
+
+Instruksi: Anda adalah asisten virtual untuk Kafe Nusantara. Jawab pertanyaan pelanggan dengan ramah, informatif, dan gunakan emoji yang sesuai. Berikan informasi berdasarkan konteks pesanan di atas. Jika ditanya tentang fungsi/kemampuan, jelaskan bahwa Anda bisa membantu info status pesanan, menu, pembayaran, lokasi, waktu, dll.
+`;
+
+      // Panggil Google Gemini API (GRATIS!)
+      const GEMINI_API_KEY = 'AIzaSyDChHFF_x3X56PZHQYM1GkU_rTXnhAj5jE'; // Ganti dengan API key Anda dari https://makersuite.google.com/app/apikey
+      
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: `${orderContext}\n\nPertanyaan Pelanggan: ${userMessage}`
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 500,
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('API Error');
+      }
+
+      const data = await response.json();
+      const aiReply = data.candidates[0].content.parts[0].text;
+
+      setChatMessages(prev => [...prev, { role: 'assistant', content: aiReply }]);
+    } catch (error) {
+      console.error('Error calling Gemini API:', error);
+      
+      // Fallback ke response manual jika API gagal
+      let fallbackReply = "";
+      const userMessageLower = userMessage.toLowerCase();
+      
+      if (userMessageLower.includes("status")) {
+        fallbackReply = `Status pesanan Anda: ${getCurrentStep()?.label}. ${getCurrentStep()?.desc} Estimasi siap: ${orderData?.estimatedTime}. ⏰`;
+      } else if (userMessageLower.includes("total") || userMessageLower.includes("harga")) {
+        fallbackReply = `Total pesanan: Rp ${totalAmount.toLocaleString('id-ID')} (sudah termasuk pajak 10%). Metode: ${orderData?.paymentMethod}. 💰`;
+      } else if (userMessageLower.includes("menu") || userMessageLower.includes("pesan")) {
+        fallbackReply = `Menu Anda: ${orderData?.items.map(item => `${item.name} (${item.qty}x)`).join(', ')}. 🍽️`;
+      } else {
+        fallbackReply = `Maaf, koneksi AI sedang bermasalah. Silakan hubungi kafe di ${orderData?.phone} untuk bantuan langsung. 📞`;
+      }
+      
+      setChatMessages(prev => [...prev, { role: 'assistant', content: fallbackReply }]);
+    } finally {
+      setChatLoading(false);
+    }
   };
 
   // Status otomatis (berhenti di completed)
@@ -237,7 +308,7 @@ export default function CafeOrderMonitoring() {
         const nextIndex = currentIndex + 1;
         return statusSteps[nextIndex]?.id || prev;
       });
-    }, 5000);
+    }, 10000); // Ubah dari 5 detik ke 10 detik
 
     return () => clearInterval(interval);
   }, [orderStatus]);
@@ -487,39 +558,15 @@ export default function CafeOrderMonitoring() {
             </button>
           </div>
 
-          {/* Tombol ke history muncul di bawah */}
+          {/* Tombol ke history muncul otomatis ketika completed */}
           {orderStatus === "completed" && (
-            <div className="mt-6">
+            <div className="mt-4">
               <a
                 href="/history"
-                className="block w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-4 rounded-2xl font-bold text-lg shadow-lg hover:scale-105 transition-all text-center"
+                className="block w-full bg-gradient-to-r from-amber-500 to-orange-600 text-white py-4 rounded-2xl font-bold text-lg shadow-lg hover:scale-105 transition-all text-center"
               >
                 📜 Lanjut ke History
               </a>
-            </div>
-          )}
-
-          {/* Demo Control (hanya muncul kalau belum selesai) */}
-          {orderStatus !== "completed" && (
-            <div className="bg-white rounded-3xl shadow-xl p-6 border-2 border-dashed border-green-300">
-              <p className="text-sm text-gray-500 mb-4 text-center font-semibold">
-                🎮 Demo: Ubah Status Pesanan
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                {statusSteps.map((step) => (
-                  <button
-                    key={step.id}
-                    onClick={() => setOrderStatus(step.id)}
-                    className={`py-3 px-4 rounded-xl font-bold text-sm transition-all duration-300 ${
-                      orderStatus === step.id
-                        ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg scale-105"
-                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                    }`}
-                  >
-                    {step.label}
-                  </button>
-                ))}
-              </div>
             </div>
           )}
         </div>
@@ -544,35 +591,57 @@ export default function CafeOrderMonitoring() {
             </div>
             <div className="flex-1 p-3 overflow-y-auto space-y-2">
               {chatMessages.length === 0 && (
-                <p className="text-sm text-gray-500 text-center">
-                  Halo! Ada yang bisa saya bantu?
-                </p>
+                <div className="text-center py-8">
+                  <p className="text-sm text-gray-500 mb-2">
+                    👋 Halo! Saya asisten virtual Kafe Nusantara.
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    Ada yang bisa saya bantu?
+                  </p>
+                </div>
               )}
               {chatMessages.map((msg, idx) => (
-                <p
+                <div
                   key={idx}
-                  className={`px-3 py-2 rounded-lg text-sm ${
-                    msg.startsWith("👤")
-                      ? "bg-green-100 text-gray-800 self-end"
-                      : "bg-green-500 text-white self-start"
-                  }`}
+                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
-                  {msg}
-                </p>
+                  <div
+                    className={`max-w-[80%] px-4 py-2 rounded-2xl text-sm ${
+                      msg.role === 'user'
+                        ? "bg-green-500 text-white rounded-br-none"
+                        : "bg-gray-100 text-gray-800 rounded-bl-none"
+                    }`}
+                  >
+                    {msg.content}
+                  </div>
+                </div>
               ))}
+              {chatLoading && (
+                <div className="flex justify-start">
+                  <div className="bg-gray-100 text-gray-800 px-4 py-2 rounded-2xl rounded-bl-none text-sm">
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="p-2 border-t flex space-x-2">
               <input
                 type="text"
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-                className="flex-1 border border-green-300 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
-                placeholder="Tulis pesan..."
+                onKeyDown={(e) => e.key === "Enter" && !chatLoading && handleSendMessage()}
+                disabled={chatLoading}
+                className="flex-1 border border-green-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 disabled:bg-gray-100"
+                placeholder={chatLoading ? "Menunggu balasan..." : "Tulis pesan..."}
               />
               <button
                 onClick={handleSendMessage}
-                className="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-lg"
+                disabled={chatLoading || !chatInput.trim()}
+                className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 <Send className="w-4 h-4" />
               </button>
